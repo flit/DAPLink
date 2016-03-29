@@ -42,6 +42,7 @@ FIRMWARE_NAME_TO_BOARD_ID = {
     'k20dx_frdmkl05z_if': 0x0210,
     'k20dx_frdmkl25z_if': 0x0200,
     'k20dx_frdmkl26z_if': 0x0260,
+    'k20dx_frdmkl28z_if': 0x0205,
     'k20dx_frdmkl46z_if': 0x0220,
     'sam3u2c_nrf51mkit_if': 0x1070,
     'sam3u2c_nrf51dongle_if': 0x1120,
@@ -73,6 +74,7 @@ TARGET_NAME_TO_BOARD_ID = {
     #k20dx_frdmkl02z_if
     'FRDM-KL05Z': 0x0210,
     'KL25Z': 0x0200,
+    'FRDM_KL28Z': 0x0205,
     #k20dx_frdmkl26z_if
     'FRDM-KL46Z': 0x0220,
     'Nordic-nRF51822': 0x1070,
@@ -100,6 +102,7 @@ BOARD_ID_LOCKED_WHEN_ERASED = set([
     0x0240,  # K64F
     0x0230,  # K20DX
     0x0200,  # KL25Z
+    0x0205,  # KL28Z
     0x0220,  # KL46Z
     0x0210,  # KL05Z
 ])
