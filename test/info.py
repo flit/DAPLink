@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
- 
+
 from __future__ import absolute_import
 
 # Add new HICs here
@@ -30,6 +30,7 @@ HIC_STRING_TO_ID = {
 FIRMWARE_NAME_TO_BOARD_ID = {
     'k20dx_frdmk22f_if': 0x0231,
     'k20dx_frdmk64f_if': 0x0240,
+    'k20dx_frdmk66f_if': 0x0311,
     'kl26z_microbit_if': 0x9900,
     'kl26z_nrf51822_if': 0x9900,
     'lpc11u35_lpc812xpresso_if': 0x1050,
@@ -67,6 +68,7 @@ TARGET_NAME_TO_BOARD_ID = {
     'FRDM-K22F': 0x0231,
     'NXP-LPC800-MAX': 0x1050,
     'FRDM-K64F': 0x0240,
+    'FRDM-K66F': 0x0311,
     'Microbit': 0x9900,
     'Nordic-nRF51-DK': 0x1100,
     'FRDM-K20D50M': 0x0230,
@@ -100,6 +102,7 @@ TARGET_NAME_TO_BOARD_ID = {
 BOARD_ID_LOCKED_WHEN_ERASED = set([
     0x0231,  # K22F
     0x0240,  # K64F
+    0x0311,  # K66F
     0x0230,  # K20DX
     0x0200,  # KL25Z
     0x0205,  # KL28Z
