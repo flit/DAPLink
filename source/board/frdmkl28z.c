@@ -1,6 +1,6 @@
 /**
- * @file    frdmkl26z.c
- * @brief   board ID for the NXP FRDM-KL26Z board
+ * @file    frdmkl28z.c
+ * @brief   board ID for the NXP FRDM-KL28Z board
  *
  * DAPLink Interface Firmware
  * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
