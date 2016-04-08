@@ -44,6 +44,7 @@ FIRMWARE_NAME_TO_BOARD_ID = {
     'k20dx_frdmkl25z_if': 0x0200,
     'k20dx_frdmkl26z_if': 0x0260,
     'k20dx_frdmkl28z_if': 0x0205,
+    'k20dx_frdmkl27z_if': 0x0261,
     'k20dx_twrkl28z72m_if': 0x0203,
     'k20dx_frdmkl46z_if': 0x0220,
     'sam3u2c_nrf51mkit_if': 0x1070,
