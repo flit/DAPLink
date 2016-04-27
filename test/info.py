@@ -48,6 +48,7 @@ FIRMWARE_NAME_TO_BOARD_ID = {
     'k20dx_twrkl28z72m_if': 0x0203,
     'k20dx_frdmkl46z_if': 0x0220,
     'k20dx_frdmke15z_if': 0x0213,
+    'k20dx_twrke18f160m_if': 0x0206,
     'sam3u2c_nrf51mkit_if': 0x1070,
     'sam3u2c_nrf51dongle_if': 0x1120,
     'lpc11u35_archble_if': 0x9009,
@@ -94,6 +95,7 @@ TARGET_NAME_TO_BOARD_ID = {
     'FRDM-KL28Z': 0x0205,
     'TWR-KL28Z72M': 0x0203,
     'FRDM-KE15Z': 0x0213,
+    'TWR-KE18F160M': 0x0206,
     #k20dx_frdmkl26z_if
     'FRDM-KL46Z': 0x0220,
     'Nordic-nRF51822': 0x1070,
@@ -124,6 +126,7 @@ BOARD_ID_LOCKED_WHEN_ERASED = set([
     0x0200,  # KL25Z
     0x0205,  # FRDM-KL28Z
     0x0203,  # TWR-KL28Z72M
+    0x0206,  # TWR-KE18F160M
     0x0220,  # KL46Z
     0x0210,  # KL05Z
     0x0213,  # FRDM-KE15Z
