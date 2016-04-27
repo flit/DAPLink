@@ -47,6 +47,7 @@ FIRMWARE_NAME_TO_BOARD_ID = {
     'k20dx_frdmkl27z_if': 0x0261,
     'k20dx_twrkl28z72m_if': 0x0203,
     'k20dx_frdmkl46z_if': 0x0220,
+    'k20dx_frdmke15z_if': 0x0213,
     'sam3u2c_nrf51mkit_if': 0x1070,
     'sam3u2c_nrf51dongle_if': 0x1120,
     'lpc11u35_archble_if': 0x9009,
@@ -66,16 +67,16 @@ FIRMWARE_NAME_TO_BOARD_ID = {
     'lpc11u35_archlink_if': 0x9013,
 }
 
-# Maps the target test application to the ID of the board it is built to run 
+# Maps the target test application to the ID of the board it is built to run
 # on.
 #
-# If the application is built on the fly using the RESTful Compile API, the 
-# map key must correspond to one of the boards on 
+# If the application is built on the fly using the RESTful Compile API, the
+# map key must correspond to one of the boards on
 # https://developer.mbed.org/platforms/{board name here}
 #
 # If the application is pre-built and supplied via --targetdir, the map
 # key is the target application filename sans extension. Note that the key
-# is also used as the board name in the test output. Thus, name the target 
+# is also used as the board name in the test output. Thus, name the target
 # application after the  board to avoid confusing results.
 #
 TARGET_NAME_TO_BOARD_ID = {
@@ -92,6 +93,7 @@ TARGET_NAME_TO_BOARD_ID = {
     'KL25Z': 0x0200,
     'FRDM-KL28Z': 0x0205,
     'TWR-KL28Z72M': 0x0203,
+    'FRDM-KE15Z': 0x0213,
     #k20dx_frdmkl26z_if
     'FRDM-KL46Z': 0x0220,
     'Nordic-nRF51822': 0x1070,
@@ -124,6 +126,7 @@ BOARD_ID_LOCKED_WHEN_ERASED = set([
     0x0203,  # TWR-KL28Z72M
     0x0220,  # KL46Z
     0x0210,  # KL05Z
+    0x0213,  # FRDM-KE15Z
 ])
 
 #Hack until these targets have an image with a valid vector table

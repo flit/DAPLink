@@ -1,6 +1,6 @@
 /**
  * @file    flash_blob.c
- * @brief   Flash algorithm for the kl25z
+ * @brief   Flash algorithm for the ke15z
  *
  * DAPLink Interface Firmware
  * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
