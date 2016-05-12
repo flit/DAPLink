@@ -1,6 +1,6 @@
 /**
- * @file    twrke18f160m.c
- * @brief   board ID for the NXP TWR-KE18F160M board
+ * @file    twrke18f.c
+ * @brief   board ID for the NXP TWR-KE18F board
  *
  * DAPLink Interface Firmware
  * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
@@ -33,4 +33,4 @@ const vfs_filename_t daplink_url_name =       "PRODINFOHTM";
 __attribute__((aligned(4)))
 const vfs_filename_t daplink_drive_name =     "TWR-KE18FD";
 __attribute__((aligned(4)))
-const char *const daplink_target_url = "http://www.nxp.com/twr-ke18f160m";
+const char *const daplink_target_url = "http://www.nxp.com/twr-ke18f";
