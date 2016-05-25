@@ -133,6 +133,7 @@ HIC_STRING_TO_ID = {
     'kl26z': 0x97969901,
     'lpc11u35': 0x97969902,
     'sam3u2c': 0x97969903,
+    'k26f': 0x97969904,
 }
 
 BOARD_ID_LOCKED_WHEN_ERASED = set([
