@@ -25,6 +25,7 @@
 #include "gpio.h"
 #include "target_reset.h"
 #include "daplink.h"
+#include "board.h"
 
 static void busy_wait(uint32_t cycles)
 {
@@ -38,6 +39,8 @@ static void busy_wait(uint32_t cycles)
 
 void gpio_init(void)
 {
+    board_init();
+
     // Enable hardfault on unaligned access for the interface only.
     // If this is done in the bootloader than then it might (will) break
     // older application firmware or firmware from 3rd party vendors.
@@ -45,7 +48,7 @@ void gpio_init(void)
     SCB->CCR |= SCB_CCR_UNALIGN_TRP_Msk;
 #endif
     // enable clock to ports
-    SIM->SCGC5 |= SIM_SCGC5_PORTD_MASK | SIM_SCGC5_PORTB_MASK;
+    SIM->SCGC5 |= SIM_SCGC5_PORTA_MASK | SIM_SCGC5_PORTB_MASK | SIM_SCGC5_PORTC_MASK | SIM_SCGC5_PORTD_MASK | SIM_SCGC5_PORTE_MASK;
     // configure pin as GPIO
     LED_CONNECTED_PORT->PCR[LED_CONNECTED_BIT] = PORT_PCR_MUX(1);
     // led off - enable output
@@ -56,6 +59,11 @@ void gpio_init(void)
     // reset button configured as gpio input
     PIN_nRESET_GPIO->PDDR &= ~PIN_nRESET;
     PIN_nRESET_PORT->PCR[PIN_nRESET_BIT] = PORT_PCR_MUX(1);
+    /* Enable LVLRST_EN */
+    PIN_nRESET_EN_PORT->PCR[PIN_nRESET_EN_BIT] = PORT_PCR_MUX(1)  |  /* GPIO */
+            PORT_PCR_ODE_MASK;  /* Open-drain */
+    PIN_nRESET_EN_GPIO->PSOR  = PIN_nRESET_EN;
+    PIN_nRESET_EN_GPIO->PDDR |= PIN_nRESET_EN;
 
     // Keep powered off in bootloader mode
     // to prevent the target from effecting the state
@@ -66,7 +74,6 @@ void gpio_init(void)
         // force always on logic 1
         PIN_POWER_EN_GPIO->PDOR |= 1UL << PIN_POWER_EN_BIT;
         PIN_POWER_EN_GPIO->PDDR |= 1UL << PIN_POWER_EN_BIT;
-    }
 
     // Let the voltage rails stabilize.  This is especailly important
     // during software resets, since the target's 3.3v rail can take
@@ -75,6 +82,7 @@ void gpio_init(void)
     // button is pressed.
     // Note: With optimization set to -O2 the value 1000000 delays for ~85ms
     busy_wait(1000000);
+    }
 }
 
 void gpio_set_hid_led(gpio_led_state_t state)
