@@ -1,6 +1,6 @@
 /**
  * @file    usb_config.h
- * @brief   
+ * @brief
  *
  * DAPLink Interface Firmware
  * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
@@ -19,6 +19,8 @@
  * limitations under the License.
  */
 
+//*** <<< Use Configuration Wizard in Context Menu >>> ***
+
 // <e> USB Device
 //   <i> Enable the USB Device functionality
 #define USBD_ENABLE                 1
@@ -28,7 +30,7 @@
 
 //   <o0.0> High-speed
 //     <i> Enable high-speed functionality (if device supports it)
-#define USBD_HS_ENABLE              0
+#define USBD_HS_ENABLE              1
 
 //   <h> Device Settings
 //     <i> These settings affect Device Descriptor
@@ -136,14 +138,14 @@
 #define USBD_HID_EP_INTIN_STACK     0
 #define USBD_HID_WMAXPACKETSIZE     64
 #define USBD_HID_BINTERVAL          1
-#define USBD_HID_HS_ENABLE          0
-#define USBD_HID_HS_WMAXPACKETSIZE  64
-#define USBD_HID_HS_BINTERVAL       6
+#define USBD_HID_HS_ENABLE          1
+#define USBD_HID_HS_WMAXPACKETSIZE  1024 | (2<<11)
+#define USBD_HID_HS_BINTERVAL       1
 #define USBD_HID_STRDESC            L"CMSIS-DAP"
 #define USBD_HID_INREPORT_NUM       1
 #define USBD_HID_OUTREPORT_NUM      1
-#define USBD_HID_INREPORT_MAX_SZ    64
-#define USBD_HID_OUTREPORT_MAX_SZ   64
+#define USBD_HID_INREPORT_MAX_SZ    1024
+#define USBD_HID_OUTREPORT_MAX_SZ   1024
 #define USBD_HID_FEATREPORT_MAX_SZ  1
 
 //     <e0.0> Mass Storage Device (MSC)
@@ -186,8 +188,8 @@
 #define USBD_MSC_EP_BULKOUT         2
 #define USBD_MSC_EP_BULKIN_STACK    0
 #define USBD_MSC_WMAXPACKETSIZE     64
-#define USBD_MSC_HS_ENABLE          0
-#define USBD_MSC_HS_WMAXPACKETSIZE  512
+#define USBD_MSC_HS_ENABLE          1
+#define USBD_MSC_HS_WMAXPACKETSIZE  1024
 #define USBD_MSC_HS_BINTERVAL       0
 #define USBD_MSC_STRDESC            L"USB_MSC"
 // Make sure changes to USBD_MSC_INQUIRY_DATA are coordinated with mbed-ls
@@ -306,14 +308,14 @@
 #define USBD_CDC_ACM_EP_INTIN_STACK     0
 #define USBD_CDC_ACM_WMAXPACKETSIZE     16
 #define USBD_CDC_ACM_BINTERVAL          32
-#define USBD_CDC_ACM_HS_ENABLE          0
+#define USBD_CDC_ACM_HS_ENABLE          1
 #define USBD_CDC_ACM_HS_WMAXPACKETSIZE  16
 #define USBD_CDC_ACM_HS_BINTERVAL       2
 #define USBD_CDC_ACM_EP_BULKIN          4
 #define USBD_CDC_ACM_EP_BULKOUT         4
 #define USBD_CDC_ACM_EP_BULKIN_STACK    0
 #define USBD_CDC_ACM_WMAXPACKETSIZE1    64
-#define USBD_CDC_ACM_HS_ENABLE1         0
+#define USBD_CDC_ACM_HS_ENABLE1         1
 #define USBD_CDC_ACM_HS_WMAXPACKETSIZE1 64
 #define USBD_CDC_ACM_HS_BINTERVAL1      0
 #define USBD_CDC_ACM_CIF_STRDESC        L"mbed Serial Port"

@@ -10,6 +10,7 @@ common:
     includes:
         - source/hic_hal/freescale/k26f
         - source/hic_hal/freescale/k26f/MK26F18
+        - source/hic_hal/freescale/k26f/usb
         - source/hic_hal/freescale/iap
     sources:
         hic_hal:
@@ -18,6 +19,8 @@ common:
             - source/hic_hal/freescale/k26f/armcc
         fsl_flash_driver:
             - source/hic_hal/freescale/iap
+        usb_device:
+            - source/hic_hal/freescale/k26f/usb
 
 tool_specific:
     uvision:

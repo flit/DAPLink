@@ -479,14 +479,16 @@ FOPT          EQU     0xF9
 FSEC          EQU     0xFE
 ;   </h>
 ; </h>
-                IF      :LNOT::DEF:RAM_TARGET
-                AREA    FlashConfig, DATA, READONLY
-__FlashConfig
+                IF      :DEF:DAPLINK_IF
+                AREA    |.ARM.__at_0x8400|, CODE, READONLY
+                ELSE
+                AREA    |.ARM.__at_0x400 |, CODE, READONLY
+                ENDIF
+
                 DCB     BackDoorK0, BackDoorK1, BackDoorK2, BackDoorK3
                 DCB     BackDoorK4, BackDoorK5, BackDoorK6, BackDoorK7
                 DCB     FPROT0    , FPROT1    , FPROT2    , FPROT3
                 DCB     FSEC      , FOPT      , FEPROT    , FDPROT
-                ENDIF
 
 
                 AREA    |.text|, CODE, READONLY
@@ -497,10 +499,6 @@ Reset_Handler   PROC
                 EXPORT  Reset_Handler             [WEAK]
                 IMPORT  SystemInit
                 IMPORT  __main
-
-                IF      :LNOT::DEF:RAM_TARGET
-                REQUIRE FlashConfig
-                ENDIF
 
                 CPSID   I               ; Mask interrupts
                 LDR     R0, =0xE000ED08
@@ -1096,7 +1094,32 @@ CAN1_DriverIRQHandler
 DefaultISR
                 B      DefaultISR
                 ENDP
-                  ALIGN
+                ALIGN
+
+
+; User Initial Stack & Heap
+
+                IF      :DEF:__MICROLIB
+
+                EXPORT  __initial_sp
+                EXPORT  __heap_base
+                EXPORT  __heap_limit
+
+                ELSE
+
+                IMPORT  __use_two_region_memory
+                EXPORT  __user_initial_stackheap
+__user_initial_stackheap
+
+                LDR     R0, =  Heap_Mem
+                LDR     R1, =(Stack_Mem + Stack_Size)
+                LDR     R2, = (Heap_Mem +  Heap_Size)
+                LDR     R3, = Stack_Mem
+                BX      LR
+
+                ALIGN
+
+                ENDIF
 
 
                 END

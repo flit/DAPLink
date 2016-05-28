@@ -74,84 +74,12 @@
 
 #include <stdint.h>
 #include "fsl_device_registers.h"
-#include "fsl_clock.h"
-#include "fsl_smc.h"
-
-/*! @brief Clock configuration structure. */
-typedef struct _clock_config
-{
-    mcg_config_t mcgConfig;       /*!< MCG configuration.      */
-    sim_clock_config_t simConfig; /*!< SIM configuration.      */
-    osc_config_t oscConfig;       /*!< OSC configuration.      */
-    uint32_t coreClock;           /*!< core clock frequency.   */
-} clock_config_t;
 
 /* ----------------------------------------------------------------------------
    -- Core clock
    ---------------------------------------------------------------------------- */
 
 uint32_t SystemCoreClock = DEFAULT_SYSTEM_CLOCK;
-
-/* Configuration for HSRUN mode. Core clock = 180MHz. */
-const clock_config_t g_defaultClockConfigHsrun = {
-    .mcgConfig =
-        {
-            .mcgMode = kMCG_ModePEE,                   /* Work in PEE mode. */
-            .irclkEnableMode = kMCG_IrclkEnableInStop, /* MCGIRCLK enable. */
-            .ircs = kMCG_IrcSlow,                      /* Select IRC32k.*/
-            .fcrdiv = 0U,                              /* FCRDIV is 0. */
-
-            .frdiv = 4U,
-            .drs = kMCG_DrsLow,         /* Low frequency range. */
-            .dmx32 = kMCG_Dmx32Default, /* DCO has a default range of 25%. */
-            .oscsel = kMCG_OscselOsc,   /* Select OSC. */
-
-            .pll0Config =
-                {
-                    .enableMode = 0U, .prdiv = 0x00U, .vdiv = 0x0EU,
-                },
-            .pllcs = kMCG_PllClkSelPll0,
-        },
-    .simConfig =
-        {
-            .pllFllSel = 1U,        /* PLLFLLSEL select PLL. */
-            .er32kSrc = 2U,         /* ERCLK32K selection, use RTC. */
-            .clkdiv1 = 0x02260000U, /* SIM_CLKDIV1. */
-        },
-    .oscConfig = {.freq = CPU_XTAL_CLK_HZ,
-                  .capLoad = 0,
-                  .workMode = kOSC_ModeOscLowPower,
-                  .oscerConfig =
-                      {
-                          .enableMode = kOSC_ErClkEnable,
-                          .erclkDiv = 0U,
-                      }},
-    .coreClock = 180000000U, /* Core clock frequency */
-};
-
-void BOARD_BootClockHSRUN(void)
-{
-    SMC_SetPowerModeProtection(SMC, kSMC_AllowPowerModeAll);
-    SMC_SetPowerModeHsrun(SMC);
-    while (SMC_GetPowerModeState(SMC) != kSMC_PowerStateHsrun)
-    {
-    }
-
-    CLOCK_SetSimSafeDivs();
-
-    CLOCK_InitOsc0(&g_defaultClockConfigHsrun.oscConfig);
-    CLOCK_SetXtal0Freq(CPU_XTAL_CLK_HZ);
-
-    CLOCK_BootToPeeMode(g_defaultClockConfigHsrun.mcgConfig.oscsel, kMCG_PllClkSelPll0,
-                        &g_defaultClockConfigHsrun.mcgConfig.pll0Config);
-
-    CLOCK_SetInternalRefClkConfig(g_defaultClockConfigHsrun.mcgConfig.irclkEnableMode,
-                                  g_defaultClockConfigHsrun.mcgConfig.ircs, g_defaultClockConfigHsrun.mcgConfig.fcrdiv);
-
-    CLOCK_SetSimConfig(&g_defaultClockConfigHsrun.simConfig);
-
-    SystemCoreClock = g_defaultClockConfigHsrun.coreClock;
-}
 
 /* ----------------------------------------------------------------------------
    -- SystemInit()
@@ -175,9 +103,6 @@ void SystemInit (void) {
                  WDOG_STCTRLH_CLKSRC_MASK |
                  0x0100U;
 #endif /* (DISABLE_WDOG) */
-
-    BOARD_BootClockHSRUN();
-    CLOCK_EnableUsbhs0Clock(kCLOCK_UsbSrcPll0, CLOCK_GetFreq(kCLOCK_PllFllSelClk));
 }
 
 /* ----------------------------------------------------------------------------
