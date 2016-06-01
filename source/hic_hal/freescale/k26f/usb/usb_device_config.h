@@ -96,7 +96,7 @@
 #define USB_DEVICE_CONFIG_REMOTE_WAKEUP (0U)
 
 /*! @brief How many endpoints are supported in the stack. */
-#define USB_DEVICE_CONFIG_ENDPOINTS (4U)
+#define USB_DEVICE_CONFIG_ENDPOINTS (8U)
 
 /*! @brief Whether the device task is enabled. */
 #define USB_DEVICE_CONFIG_USE_TASK (0U)
@@ -109,14 +109,14 @@
 /*! @brief The MAX buffer length for the KHCI DMA workaround.*/
 #define USB_DEVICE_CONFIG_KHCI_DMA_ALIGN_BUFFER_LENGTH (64U)
 /*! @brief Whether the USB KHCI bus error is handled. */
-#define USB_DEVICE_CONFIG_KHCI_ERROR_HANDLING (0U)
+#define USB_DEVICE_CONFIG_KHCI_ERROR_HANDLING (1U)
 #endif
 
 #if ((defined(USB_DEVICE_CONFIG_EHCI)) && (USB_DEVICE_CONFIG_EHCI > 0U))
 /*! @brief The number of supported DTDs. */
 #define USB_DEVICE_CONFIG_EHCI_MAX_DTD (16U)
 /*! @brief Whether the USB EHCI bus error is handled. */
-#define USB_DEVICE_CONFIG_EHCI_ERROR_HANDLING (0U)
+#define USB_DEVICE_CONFIG_EHCI_ERROR_HANDLING (1U)
 /*! @brief Whether the test mode is enabled. */
 #define USB_DEVICE_CONFIG_EHCI_TEST_MODE (0U)
 /*! @brief Whether the EHCI ID pin detect feature is enabled. */
@@ -130,10 +130,10 @@
 #define USB_DEVICE_CONFIG_BUFFER_PROPERTY_CACHEABLE (0U)
 
 /*! @brief Whether the low power mode is enabled or not. */
-#define USB_DEVICE_CONFIG_LOW_POWER_MODE (0U)
+#define USB_DEVICE_CONFIG_LOW_POWER_MODE (1U)
 
 /*! @brief Whether the device detached feature is enabled or not. */
-#define USB_DEVICE_CONFIG_DETACH_ENABLE (0U)
+#define USB_DEVICE_CONFIG_DETACH_ENABLE (1U)
 
 /* @} */
 
