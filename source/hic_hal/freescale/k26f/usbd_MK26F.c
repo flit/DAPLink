@@ -42,6 +42,55 @@ static usb_device_handle s_handle;
 static ep_info_t s_ep[EP_COUNT];
 U32 LastError;                          /* Last Error                         */
 
+usb_status_t usb_device_callback(usb_device_handle handle, uint32_t callbackEvent, void *eventParam);
+usb_status_t usb_device_endpoint_callback(usb_device_handle handle,
+                                           usb_device_endpoint_callback_message_struct_t *message,
+                                           void *callbackParam);
+
+usb_status_t usb_device_control_endpoint_callback(usb_device_handle handle,
+                                           usb_device_endpoint_callback_message_struct_t *message,
+                                           void *callbackParam)
+{
+    ep_info_t *ep = &s_ep[0]; //(uint32_t)callbackParam & ~USB_ENDPOINT_DIRECTION_MASK];
+    ep->actualBytesRead = message->length;
+//     os_sem_send(&ep->readSem);
+    return kStatus_USB_Success;
+}
+
+usb_status_t USB_DeviceControlPipeInit()
+{
+    usb_device_endpoint_init_struct_t epInitStruct;
+    usb_device_endpoint_callback_struct_t endpointCallback;
+    usb_status_t error;
+
+    endpointCallback.callbackFn = usb_device_control_endpoint_callback;
+    endpointCallback.callbackParam = (void *)0;
+
+    epInitStruct.zlt = 1U;
+    epInitStruct.transferType = USB_ENDPOINT_CONTROL;
+    epInitStruct.endpointAddress = USB_CONTROL_ENDPOINT | (USB_IN << USB_DESCRIPTOR_ENDPOINT_ADDRESS_DIRECTION_SHIFT);
+    epInitStruct.maxPacketSize = USB_CONTROL_MAX_PACKET_SIZE;
+    /* Initialize the control IN pipe */
+    error = USB_DeviceInitEndpoint(s_handle, &epInitStruct, &endpointCallback);
+
+    if (kStatus_USB_Success != error)
+    {
+        return error;
+    }
+    epInitStruct.endpointAddress = USB_CONTROL_ENDPOINT | (USB_OUT << USB_DESCRIPTOR_ENDPOINT_ADDRESS_DIRECTION_SHIFT);
+    /* Initialize the control OUT pipe */
+    error = USB_DeviceInitEndpoint(s_handle, &epInitStruct, &endpointCallback);
+
+    if (kStatus_USB_Success != error)
+    {
+        USB_DeviceDeinitEndpoint(s_handle,
+                                 USB_CONTROL_ENDPOINT | (USB_IN << USB_DESCRIPTOR_ENDPOINT_ADDRESS_DIRECTION_SHIFT));
+        return error;
+    }
+
+    return kStatus_USB_Success;
+}
+
 usb_status_t usb_device_callback(usb_device_handle handle, uint32_t callbackEvent, void *eventParam)
 {
     switch (callbackEvent)
@@ -53,6 +102,10 @@ usb_status_t usb_device_callback(usb_device_handle handle, uint32_t callbackEven
             USBD_HighSpeed = (speed == USB_SPEED_HIGH);
 
             usbd_reset_core();
+
+            // Setup EP0.
+            USB_DeviceControlPipeInit();
+
 #ifdef __RTX
             if (USBD_RTX_DevTask) {
                 isr_evt_set(USBD_EVT_RESET, USBD_RTX_DevTask);
@@ -271,7 +324,7 @@ void USBD_ConfigEP(USB_ENDPOINT_DESCRIPTOR *pEPD)
     epInit.maxPacketSize = pEPD->wMaxPacketSize;
     epInit.endpointAddress = pEPD->bEndpointAddress;
     epInit.transferType = pEPD->bmAttributes & USB_ENDPOINT_TYPE_MASK;
-    epInit.zlt = 0;
+    epInit.zlt = 1;
 
     usb_device_endpoint_callback_struct_t callback;
     callback.callbackFn = usb_device_endpoint_callback;
