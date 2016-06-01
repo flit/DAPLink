@@ -73,6 +73,11 @@ uint32_t USB_EhciPhyInit(uint8_t controllerId, uint32_t freq)
     USBPHY->CTRL |= USBPHY_CTRL_SET_ENUTMILEVEL3_MASK; /* support external FS Hub with LS device connected. */
     /* PWD register provides overall control of the PHY power state */
     USBPHY->PWD = 0U;
+
+    while (!(USBPHY->PLL_SIC & USBPHY_PLL_SIC_PLL_LOCK_MASK))
+    {
+    }
+
     /* Decode to trim the nominal 17.78mA current source for the High Speed TX drivers on USB_DP and USB_DM. */
     USBPHY->TX = ((USBPHY->TX & (~USBPHY_TX_D_CAL_MASK)) | USBPHY_TX_D_CAL(0xcU));
 #endif

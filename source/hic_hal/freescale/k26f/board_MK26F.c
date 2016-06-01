@@ -112,7 +112,6 @@ const clock_config_t g_defaultClockConfigHsrun = {
     .coreClock = 180000000U, /* Core clock frequency */
 };
 
-
 void BOARD_BootClockRUN(void)
 {
     CLOCK_SetSimSafeDivs();
@@ -155,11 +154,25 @@ void BOARD_BootClockHSRUN(void)
     SystemCoreClock = g_defaultClockConfigHsrun.coreClock;
 }
 
+// Enable just those clocks required to turn on the 480MHz PLL so we can connect via USB.
 void board_init(void)
 {
-    BOARD_BootClockRUN();
+    // Invalidate and enable code cache.
+    LMEM->PCCCR = LMEM_PCCCR_GO_MASK | LMEM_PCCCR_INVW1_MASK | LMEM_PCCCR_INVW0_MASK | LMEM_PCCCR_ENCACHE_MASK;
 
-    // Enable USB clock source and init phy.
+    // Enable external oscillator and 32kHz IRC.
+    MCG->C1 |= MCG_C1_IRCLKEN_MASK; // Select 32k IR.
+    // Configure OSC for very high freq, low power mode.
+    MCG->C2 = (MCG->C2 & ~(MCG_C2_RANGE_MASK | MCG_C2_HGO_MASK)) | MCG_C2_RANGE(2);
+    OSC0->CR |= OSC_CR_ERCLKEN_MASK; // Enable OSC.
+    MCG->C2 |= MCG_C2_EREFS_MASK; // Select OSC as ext ref.
+
+    // Wait for the oscillator to stabilize.
+    while (!(MCG->S & MCG_S_OSCINIT0_MASK))
+    {
+    }
+
+    // Enable USB clock source and init phy. This turns on the 480MHz PLL.
     CLOCK_EnableUsbhs0Clock(kCLOCK_UsbSrcPll0, CLOCK_GetFreq(kCLOCK_PllFllSelClk));
     USB_EhciPhyInit(kUSB_ControllerEhci0, CPU_XTAL_CLK_HZ);
 }
