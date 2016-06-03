@@ -1,5 +1,5 @@
 /**
- * @file    board_MK26F.c
+ * @file    hic_init.c
  * @brief
  *
  * DAPLink Interface Firmware
@@ -19,12 +19,12 @@
  * limitations under the License.
  */
 
-#include "board.h"
+#include "hic_init.h"
 #include "fsl_clock.h"
 #include "fsl_smc.h"
-#include "usb_device_config.h"
-#include "fsl_usb.h"
-#include "usb_device.h"
+//#include "usb_device_config.h"
+//#include "fsl_usb.h"
+//#include "usb_device.h"
 #include "usb_phy.h"
 
 /*! @brief Clock configuration structure. */
@@ -155,8 +155,11 @@ void BOARD_BootClockHSRUN(void)
 }
 
 // Enable just those clocks required to turn on the 480MHz PLL so we can connect via USB.
-void board_init(void)
+void hic_init(void)
 {
+    // Disable the MPU.
+    MPU->CESR = 0;
+
     // Invalidate and enable code cache.
     LMEM->PCCCR = LMEM_PCCCR_GO_MASK | LMEM_PCCCR_INVW1_MASK | LMEM_PCCCR_INVW0_MASK | LMEM_PCCCR_ENCACHE_MASK;
 
@@ -174,5 +177,5 @@ void board_init(void)
 
     // Enable USB clock source and init phy. This turns on the 480MHz PLL.
     CLOCK_EnableUsbhs0Clock(kCLOCK_UsbSrcPll0, CLOCK_GetFreq(kCLOCK_PllFllSelClk));
-    USB_EhciPhyInit(kUSB_ControllerEhci0, CPU_XTAL_CLK_HZ);
+    USB_EhciPhyInit(0, CPU_XTAL_CLK_HZ);
 }
