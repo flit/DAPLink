@@ -33,9 +33,9 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include "usb_osa.h"
-#include "usb_misc.h"
-#include "usb_spec.h"
+// #include "usb_osa.h"
+// #include "usb_misc.h"
+// #include "usb_spec.h"
 
 /*!
  * @addtogroup usb_drv
