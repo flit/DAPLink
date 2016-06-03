@@ -480,7 +480,7 @@ FSEC          EQU     0xFE
 ;   </h>
 ; </h>
                 IF      :DEF:DAPLINK_IF
-                AREA    |.ARM.__at_0x8400|, CODE, READONLY
+                AREA    |.ARM.__at_0x20400|, CODE, READONLY
                 ELSE
                 AREA    |.ARM.__at_0x400 |, CODE, READONLY
                 ENDIF

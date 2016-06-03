@@ -25,7 +25,7 @@
 /* Device sizes */
 
 #define DAPLINK_ROM_START               0x00000000
-#define DAPLINK_ROM_SIZE                0x00200000
+#define DAPLINK_ROM_SIZE                0x00040000
 
 #define DAPLINK_RAM_START               0x1fff0000
 #define DAPLINK_RAM_SIZE                0x00040000
@@ -39,9 +39,9 @@
 #define DAPLINK_ROM_CONFIG_ADMIN_SIZE   0x00001000
 
 #define DAPLINK_ROM_IF_START            0x00020000
-#define DAPLINK_ROM_IF_SIZE             0x001df000
+#define DAPLINK_ROM_IF_SIZE             0x0001f000
 
-#define DAPLINK_ROM_CONFIG_USER_START   0x001ff000
+#define DAPLINK_ROM_CONFIG_USER_START   0x0003f000
 #define DAPLINK_ROM_CONFIG_USER_SIZE    0x00001000
 
 /* RAM sizes */
