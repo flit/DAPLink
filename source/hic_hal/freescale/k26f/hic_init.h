@@ -23,8 +23,11 @@
 extern "C" {
 #endif
 
-// Enable just those clocks required to turn on the 480MHz PLL so we can connect via USB.
+//! @brief Set the system-wide configuration, including clocks.
 void hic_init(void);
+
+//! @brief Raise clock speeds after USB is enumerated and we can draw more current.
+void hic_enable_fast_clock(void);
 
 #if defined(__cplusplus)
 }

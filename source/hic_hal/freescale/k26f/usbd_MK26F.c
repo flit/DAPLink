@@ -23,6 +23,7 @@
 #include "rl_usb.h"
 #include "usb.h"
 #include "fsl_device_registers.h"
+#include "hic_init.h"
 
 #define __NO_USB_LIB_C
 #include "usb_config.c"
@@ -326,6 +327,8 @@ void USBD_Configure(uint32_t cfg)
         }
 
         BufUsed = 2 * USBD_MAX_PACKET0;
+    } else {
+        hic_enable_fast_clock();
     }
 }
 

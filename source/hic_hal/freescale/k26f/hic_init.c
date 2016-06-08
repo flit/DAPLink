@@ -22,146 +22,42 @@
 #include "hic_init.h"
 #include "fsl_clock.h"
 #include "fsl_smc.h"
-//#include "usb_device_config.h"
-//#include "fsl_usb.h"
-//#include "usb_device.h"
 #include "usb_phy.h"
+#include "util.h"
 
-/*! @brief Clock configuration structure. */
-typedef struct _clock_config
+static void busy_wait(uint32_t cycles)
 {
-    mcg_config_t mcgConfig;       /*!< MCG configuration.      */
-    sim_clock_config_t simConfig; /*!< SIM configuration.      */
-    osc_config_t oscConfig;       /*!< OSC configuration.      */
-    uint32_t coreClock;           /*!< core clock frequency.   */
-} clock_config_t;
+    volatile uint32_t i;
+    i = cycles;
 
-/* Configuration for enter RUN mode. Core clock = 120MHz. */
-const clock_config_t g_defaultClockConfigRun = {
-    .mcgConfig =
-        {
-            .mcgMode = kMCG_ModePEE,             /* Work in PEE mode. */
-            .irclkEnableMode = kMCG_IrclkEnable, /* MCGIRCLK enable. */
-            .ircs = kMCG_IrcSlow,                /* Select IRC32k. */
-            .fcrdiv = 0U,                        /* FCRDIV is 0. */
-
-            .frdiv = 4U,
-            .drs = kMCG_DrsLow,         /* Low frequency range */
-            .dmx32 = kMCG_Dmx32Default, /* DCO has a default range of 25% */
-            .oscsel = kMCG_OscselOsc,   /* Select OSC */
-
-            .pll0Config =
-                {
-                    .enableMode = 0U, .prdiv = 0x00U, .vdiv = 0x04U,
-                },
-            .pllcs = kMCG_PllClkSelPll0,
-        },
-    .simConfig =
-        {
-            .pllFllSel = 1U, /* PLLFLLSEL select PLL. */
-            .pllFllDiv = 0U,
-            .pllFllFrac = 0U,
-            .er32kSrc = 2U,         /* ERCLK32K selection, use RTC. */
-            .clkdiv1 = 0x01140000U, /* SIM_CLKDIV1. */
-        },
-    .oscConfig = {.freq = CPU_XTAL_CLK_HZ,
-                  .capLoad = 0,
-                  .workMode = kOSC_ModeOscLowPower,
-                  .oscerConfig =
-                      {
-                          .enableMode = kOSC_ErClkEnable,
-                          .erclkDiv = 0U,
-                      }},
-    .coreClock = 120000000U, /* Core clock frequency */
-};
-
-/* Configuration for HSRUN mode. Core clock = 180MHz. */
-const clock_config_t g_defaultClockConfigHsrun = {
-    .mcgConfig =
-        {
-            .mcgMode = kMCG_ModePEE,                   /* Work in PEE mode. */
-            .irclkEnableMode = kMCG_IrclkEnableInStop, /* MCGIRCLK enable. */
-            .ircs = kMCG_IrcSlow,                      /* Select IRC32k.*/
-            .fcrdiv = 0U,                              /* FCRDIV is 0. */
-
-            .frdiv = 4U,
-            .drs = kMCG_DrsLow,         /* Low frequency range. */
-            .dmx32 = kMCG_Dmx32Default, /* DCO has a default range of 25%. */
-            .oscsel = kMCG_OscselOsc,   /* Select OSC. */
-
-            .pll0Config =
-                {
-                    .enableMode = 0U, .prdiv = 0x00U, .vdiv = 0x0EU,
-                },
-            .pllcs = kMCG_PllClkSelPll0,
-        },
-    .simConfig =
-        {
-            .pllFllSel = 1U,        /* PLLFLLSEL select PLL. */
-            .er32kSrc = 2U,         /* ERCLK32K selection, use RTC. */
-            .clkdiv1 = 0x02260000U, /* SIM_CLKDIV1. */
-        },
-    .oscConfig = {.freq = CPU_XTAL_CLK_HZ,
-                  .capLoad = 0,
-                  .workMode = kOSC_ModeOscLowPower,
-                  .oscerConfig =
-                      {
-                          .enableMode = kOSC_ErClkEnable,
-                          .erclkDiv = 0U,
-                      }},
-    .coreClock = 180000000U, /* Core clock frequency */
-};
-
-void BOARD_BootClockRUN(void)
-{
-    CLOCK_SetSimSafeDivs();
-
-    CLOCK_InitOsc0(&g_defaultClockConfigRun.oscConfig);
-    CLOCK_SetXtal0Freq(CPU_XTAL_CLK_HZ);
-
-    CLOCK_BootToPeeMode(g_defaultClockConfigRun.mcgConfig.oscsel, kMCG_PllClkSelPll0,
-                        &g_defaultClockConfigRun.mcgConfig.pll0Config);
-
-    CLOCK_SetInternalRefClkConfig(g_defaultClockConfigRun.mcgConfig.irclkEnableMode,
-                                  g_defaultClockConfigRun.mcgConfig.ircs, g_defaultClockConfigRun.mcgConfig.fcrdiv);
-
-    CLOCK_SetSimConfig(&g_defaultClockConfigRun.simConfig);
-
-    SystemCoreClock = g_defaultClockConfigRun.coreClock;
-}
-
-void BOARD_BootClockHSRUN(void)
-{
-    SMC_SetPowerModeProtection(SMC, kSMC_AllowPowerModeAll);
-    SMC_SetPowerModeHsrun(SMC);
-    while (SMC_GetPowerModeState(SMC) != kSMC_PowerStateHsrun)
-    {
+    while (i > 0) {
+        i--;
     }
-
-    CLOCK_SetSimSafeDivs();
-
-    CLOCK_InitOsc0(&g_defaultClockConfigHsrun.oscConfig);
-    CLOCK_SetXtal0Freq(CPU_XTAL_CLK_HZ);
-
-    CLOCK_BootToPeeMode(g_defaultClockConfigHsrun.mcgConfig.oscsel, kMCG_PllClkSelPll0,
-                        &g_defaultClockConfigHsrun.mcgConfig.pll0Config);
-
-    CLOCK_SetInternalRefClkConfig(g_defaultClockConfigHsrun.mcgConfig.irclkEnableMode,
-                                  g_defaultClockConfigHsrun.mcgConfig.ircs, g_defaultClockConfigHsrun.mcgConfig.fcrdiv);
-
-    CLOCK_SetSimConfig(&g_defaultClockConfigHsrun.simConfig);
-
-    SystemCoreClock = g_defaultClockConfigHsrun.coreClock;
 }
 
-// Enable just those clocks required to turn on the 480MHz PLL so we can connect via USB.
+//! - MPU is disabled and gated.
+//! - 8kB cache is enabled. SRAM is not cached, so no flushing is required for normal operation.
+//! - Switch to high-speed run mode.
+//! - Turn on 16MHz crystal oscillator.
+//! - Turn on 32kHz IRC.
+//! - Enable the 480MHz USB PHY PLL.
+//! - Ungate USBPHY and USBHS.
+//! - Configure the USB PHY.
+//! - Enable the phase fractional divider (PFD) output from 480Mhz the USB PLL to output 120MHz.
+//! - Configure system clocks to use the PFD.
 void hic_init(void)
 {
     // Disable the MPU.
     MPU->CESR = 0;
+    SIM->SCGC7 &= ~SIM_SCGC7_MPU_MASK;
 
     // Invalidate and enable code cache.
     LMEM->PCCCR = LMEM_PCCCR_GO_MASK | LMEM_PCCCR_INVW1_MASK | LMEM_PCCCR_INVW0_MASK | LMEM_PCCCR_ENCACHE_MASK;
+
+    // Enable LVW IRQ.
+    PMC->LVDSC1 = PMC_LVDSC1_LVDV(1); // high trip point
+    PMC->LVDSC2 = PMC_LVDSC2_LVWIE_MASK | PMC_LVDSC2_LVWV(3); // high trip point
+    NVIC_EnableIRQ(LVD_LVW_IRQn);
 
     // Enable external oscillator and 32kHz IRC.
     MCG->C1 |= MCG_C1_IRCLKEN_MASK; // Select 32k IR.
@@ -178,4 +74,53 @@ void hic_init(void)
     // Enable USB clock source and init phy. This turns on the 480MHz PLL.
     CLOCK_EnableUsbhs0Clock(kCLOCK_UsbSrcPll0, CLOCK_GetFreq(kCLOCK_PllFllSelClk));
     USB_EhciPhyInit(0, CPU_XTAL_CLK_HZ);
+
+    // Enable USBPHY PFD output.
+    USBPHY->ANACTRL = USBPHY_ANACTRL_PFD_FRAC(26)       // 332.3MHz output
+                        | USBPHY_ANACTRL_PFD_CLK_SEL(2) // Div 2 = 166.2MHz
+                        | USBPHY_ANACTRL_PFD_CLKGATE(0);
+
+    // Wait for PFD to be stable.
+    while (!(USBPHY->ANACTRL & USBPHY_ANACTRL_PFD_STABLE_MASK))
+    {
+    }
+
+    // Set dividers before switching clocks.
+    SIM->CLKDIV1 = SIM_CLKDIV1_OUTDIV1(5)       // System/core  /6 = 27.7MHz
+                    | SIM_CLKDIV1_OUTDIV2(5)    // Bus          /6 = 27.7Mhz
+                    | SIM_CLKDIV1_OUTDIV3(5)    // FlexBus      /6 = 27.7Mhz
+                    | SIM_CLKDIV1_OUTDIV4(5);   // Flash        /6 = 27.7MHz
+
+    // Select USBPHY PFD as PLL source.
+    MCG->C11 = MCG_C11_PLLCS_MASK;
+
+    // Switch MCGOUTCLK to PLL source.
+    MCG->C6 |= MCG_C6_PLLS_MASK;
+
+    SystemCoreClockUpdate();
+}
+
+// This IRQ handler will be invoked if VDD falls below the trip point.
+void LVD_LVW_IRQHandler(void)
+{
+    util_assert(0);
+    busy_wait(100000);
+}
+
+void hic_enable_fast_clock(void)
+{
+    // Raise clocks in multiple steps.
+    SIM->CLKDIV1 = SIM_CLKDIV1_OUTDIV1(3)       // System/core  /4 = 41.5MHz
+                    | SIM_CLKDIV1_OUTDIV2(3)    // Bus          /4 = 41.5Mhz
+                    | SIM_CLKDIV1_OUTDIV3(7)    // FlexBus      /8 = 20.8Mhz
+                    | SIM_CLKDIV1_OUTDIV4(7);   // Flash        /8 = 20.8MHz
+    busy_wait(50000);
+
+    SIM->CLKDIV1 = SIM_CLKDIV1_OUTDIV1(2)       // System/core  /3 = 55.4MHz
+                    | SIM_CLKDIV1_OUTDIV2(5)    // Bus          /6 = 27.7Mhz
+                    | SIM_CLKDIV1_OUTDIV3(5)    // FlexBus      /6 = 27.7Mhz
+                    | SIM_CLKDIV1_OUTDIV4(5);   // Flash        /6 = 27.7MHz
+    busy_wait(100000);
+
+    SystemCoreClockUpdate();
 }
