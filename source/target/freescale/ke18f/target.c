@@ -1,6 +1,6 @@
 /**
- * @file    frdmkl28z.c
- * @brief   board ID for the NXP FRDM-KL28Z board
+ * @file    target.c
+ * @brief   Target information for the ke18f
  *
  * DAPLink Interface Firmware
  * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
@@ -19,18 +19,18 @@
  * limitations under the License.
  */
 
-#include "virtual_fs.h"
+#include "target_config.h"
 
-const char *board_id = "0205";
+// The file flash_blob.c must only be included in target.c
+#include "flash_blob.c"
 
-// Override default behavior
-//
-// URL_NAME and DRIVE_NAME must be 11 characters excluding
-// the null terminated character
-// Note - 4 byte alignemnt required as workaround for ARMCC compiler bug with weak references
-__attribute__((aligned(4)))
-const vfs_filename_t daplink_url_name =       "PRODINFOHTM";
-__attribute__((aligned(4)))
-const vfs_filename_t daplink_drive_name =     "FRDM-KL28ZD";
-__attribute__((aligned(4)))
-const char *const daplink_target_url = "http://www.nxp.com/frdm-kl28z";
+// target information
+const target_cfg_t target_device = {
+    .sector_size    = 4096,
+    .sector_cnt     = (KB(512) / 4096),
+    .flash_start    = 0,
+    .flash_end      = KB(512),
+    .ram_start      = 0x1FFF8000,
+    .ram_end        = 0x20008000,
+    .flash_algo     = (program_target_t *) &flash,
+};

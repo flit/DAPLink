@@ -1,6 +1,6 @@
 /**
- * @file    frdmkl28z.c
- * @brief   board ID for the NXP FRDM-KL28Z board
+ * @file    frdmke15z.c
+ * @brief   board ID for the NXP FRDM-KE15Z board
  *
  * DAPLink Interface Firmware
  * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
@@ -21,7 +21,7 @@
 
 #include "virtual_fs.h"
 
-const char *board_id = "0205";
+const char *board_id = "0213";
 
 // Override default behavior
 //
@@ -31,6 +31,6 @@ const char *board_id = "0205";
 __attribute__((aligned(4)))
 const vfs_filename_t daplink_url_name =       "PRODINFOHTM";
 __attribute__((aligned(4)))
-const vfs_filename_t daplink_drive_name =     "FRDM-KL28ZD";
+const vfs_filename_t daplink_drive_name =     "FRDM-KE15ZD";
 __attribute__((aligned(4)))
-const char *const daplink_target_url = "http://www.nxp.com/frdm-kl28z";
+const char *const daplink_target_url = "http://www.nxp.com/frdm-ke15z";
