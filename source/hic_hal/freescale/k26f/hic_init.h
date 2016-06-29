@@ -23,11 +23,11 @@
 extern "C" {
 #endif
 
-//! @brief Set the system-wide configuration, including clocks.
+//! @brief Set some system-wide hardware settings.
 void hic_init(void);
 
-//! @brief Raise clock speeds after USB is enumerated and we can draw more current.
-void hic_enable_fast_clock(void);
+//! @brief Enable clocks required for USB operation.
+void hic_enable_usb_clocks(void);
 
 #if defined(__cplusplus)
 }
