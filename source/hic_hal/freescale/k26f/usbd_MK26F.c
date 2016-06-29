@@ -118,22 +118,13 @@ void USBD_Intr(int ena)
 void USBD_Init(void)
 {
     USBD_Intr(0);
-    /* BASE_USB0_CLK */
-//     LPC_CGU->BASE_USB0_CLK =    (0x01 << 11) |       /* Autoblock En */
-//                                 (0x07 << 24) ;       /* Clock source: PLL0 */
-//     LPC_CCU1->CLK_M4_USB0_CFG |= 1;
-//
-//     while (!(LPC_CCU1->CLK_M4_USB0_STAT & 1));
-//
-//     LPC_SCU->SFSP6_3 = 1;                 /* pwr en */
-//     LPC_SCU->SFSP6_6 = 3;                 /* pwr fault */
-//     LPC_SCU->SFSP8_1 = 1;                 /* port indicator LED control out 1 */
-//     LPC_SCU->SFSP8_2 = 1;                 /* port indicator LED control out 0 */
+
+    hic_enable_usb_clocks();
+
     USBHS->USBCMD |= (1UL << 1);     /* usb reset */
 
     while (USBHS->USBCMD & (1UL << 1));
 
-//     LPC_CREG->CREG0 &= ~(1 << 5);
     USBHS->USBMODE  = 2 | (1UL << 3);/* device mode */
 #if USBD_HS_ENABLE
     USBHS->PORTSC1 &= ~(1UL << 24);
@@ -328,7 +319,6 @@ void USBD_Configure(uint32_t cfg)
 
         BufUsed = 2 * USBD_MAX_PACKET0;
     } else {
-        hic_enable_fast_clock();
     }
 }
 

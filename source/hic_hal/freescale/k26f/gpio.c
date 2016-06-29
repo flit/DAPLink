@@ -55,7 +55,7 @@ void gpio_init(void)
     LED_CONNECTED_GPIO->PDOR = 1UL << LED_CONNECTED_BIT;
     LED_CONNECTED_GPIO->PDDR = 1UL << LED_CONNECTED_BIT;
     // led on
-//     LED_CONNECTED_GPIO->PCOR  |= 1UL << LED_CONNECTED_BIT;
+    LED_CONNECTED_GPIO->PCOR  |= 1UL << LED_CONNECTED_BIT;
     // reset button configured as gpio input
     PIN_nRESET_GPIO->PDDR &= ~PIN_nRESET;
     PIN_nRESET_PORT->PCR[PIN_nRESET_BIT] = PORT_PCR_MUX(1);
@@ -80,8 +80,8 @@ void gpio_init(void)
         // 20-50ms to drain.  During this time the target could be driving
         // the reset pin low, causing the bootloader to think the reset
         // button is pressed.
-        // Note: With optimization set to -O2 the value 1000000 delays for ~85ms
-        busy_wait(1000000);
+        // Note: With optimization set to -O2 the value 5115 delays for ~1ms @ 20.9Mhz core
+        busy_wait(5115 * 50);
     }
 }
 
