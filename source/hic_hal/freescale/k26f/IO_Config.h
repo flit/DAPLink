@@ -47,15 +47,15 @@ COMPILER_ASSERT(DAPLINK_HIC_ID == DAPLINK_HIC_ID_K26F);
 #define PIN_SWDIO_IN_GPIO       PTC
 #define PIN_SWDIO_IN_BIT        7
 
-// SWDIO Neg. Output Enable Pin PTA5
-#define PIN_SWDIO_NOE_PORT      PORTA
-#define PIN_SWDIO_NOE_GPIO      PTA
-#define PIN_SWDIO_NOE_BIT       5
+// SWDIO Output Enable Pin     PTA5
+#define PIN_SWDIO_OE_PORT      PORTA
+#define PIN_SWDIO_OE_GPIO      PTA
+#define PIN_SWDIO_OE_BIT       5
 
-// SWD Neg. Enable Pin          PTA4
-#define PIN_SWD_NOE_PORT        PORTA
-#define PIN_SWD_NOE_GPIO        PTA
-#define PIN_SWD_NOE_BIT         4
+// SWD Enable Pin               PTA4
+#define PIN_SWD_OE_PORT        PORTA
+#define PIN_SWD_OE_GPIO        PTA
+#define PIN_SWD_OE_BIT         4
 
 // nRESET Pin                   PTA7
 #define PIN_nRESET_PORT         PORTA
