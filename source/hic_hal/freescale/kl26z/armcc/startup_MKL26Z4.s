@@ -1,6 +1,6 @@
 ;/**
 ; * @file    startup_MKL26Z.s
-; * @brief   
+; * @brief
 ; *
 ; * DAPLink Interface Firmware
 ; * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
@@ -357,13 +357,13 @@ DefaultISR
                 ALIGN
 ; User Initial Stack & Heap
                 IF      :DEF:__MICROLIB
-                
+
                 EXPORT  __initial_sp
                 EXPORT  __heap_base
                 EXPORT  __heap_limit
-                
+
                 ELSE
-                
+
                 IMPORT  __use_two_region_memory
                 EXPORT  __user_initial_stackheap
 __user_initial_stackheap
@@ -375,5 +375,5 @@ __user_initial_stackheap
                 ALIGN
 
                 ENDIF
-                
+
                 END

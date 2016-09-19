@@ -1,6 +1,6 @@
 ;/**
 ; * @file    startup_MK20D5.s
-; * @brief   
+; * @brief
 ; *
 ; * DAPLink Interface Firmware
 ; * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
