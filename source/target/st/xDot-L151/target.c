@@ -1,6 +1,6 @@
 /**
- * @file    efm32gg_stk.c
- * @brief   board ID for the SiLabs Giant Gecko (not sure which board)
+ * @file    target.c
+ * @brief   Target information for the stm32l151
  *
  * DAPLink Interface Firmware
  * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
@@ -19,4 +19,18 @@
  * limitations under the License.
  */
 
-const char *board_id = "2015";
+#include "target_config.h"
+
+// The file flash_blob.c must only be included in target.c
+#include "flash_blob.c"
+
+// target information
+target_cfg_t target_device = {
+    .sector_size    = 256,
+    .sector_cnt     = KB(1),
+    .flash_start    = 0x08000000,
+    .flash_end      = 0x08000000 + KB(256),
+    .ram_start      = 0x20000000,
+    .ram_end        = 0x20000000 + KB(32),
+    .flash_algo     = (program_target_t *) &flash,
+};

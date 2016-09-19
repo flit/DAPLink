@@ -1,6 +1,6 @@
 /**
- * @file    nrf51dk.c
- * @brief   board ID for the Nordic nRF51822dk board
+ * @file    sscity.c
+ * @brief   board ID for the Switch Science ty51822r3 board
  *
  * DAPLink Interface Firmware
  * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
@@ -18,5 +18,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "virtual_fs.h"
 
-const char *board_id = "1100";
+const char *board_id = "1021";
+
+const vfs_filename_t daplink_drive_name =     "MBED       ";

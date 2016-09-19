@@ -1,6 +1,6 @@
 /**
- * @file    nrf51mkit.c
- * @brief   board ID for the Nordic nRF51822mkit board
+ * @file    target_reset.c
+ * @brief   Target reset for the stm32l151
  *
  * DAPLink Interface Firmware
  * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
@@ -19,4 +19,26 @@
  * limitations under the License.
  */
 
-const char *board_id = "1070";
+#include "target_reset.h"
+#include "swd_host.h"
+
+void target_before_init_debug(void)
+{
+    return;
+}
+
+uint8_t target_unlock_sequence(void)
+{
+    return 1;
+}
+
+uint8_t target_set_state(TARGET_RESET_STATE state)
+{
+    return swd_set_target_state_hw(state);
+}
+
+uint8_t security_bits_set(uint32_t addr, uint8_t *data, uint32_t size)
+{
+    return 0;
+}
+
