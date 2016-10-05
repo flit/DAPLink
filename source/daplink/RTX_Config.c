@@ -89,6 +89,8 @@
 #define OS_CLOCK    48000000
 #elif defined(INTERFACE_SAM3U2C)
 #define OS_CLOCK    96000000
+#elif defined(INTERFACE_K22F)
+#define OS_CLOCK    120000000
 #elif defined(INTERFACE_LPC4322)
 #define OS_CLOCK    204000000
 #endif
