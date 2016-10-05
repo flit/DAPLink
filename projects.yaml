@@ -37,6 +37,9 @@ module:
     hic_k20dx: &module_hic_k20dx
         - records/rtos/rtos-cm3.yaml
         - records/hic_hal/k20dx.yaml
+    hic_k22f: &module_hic_k22f
+        - records/rtos/rtos-cm3.yaml
+        - records/hic_hal/k22f.yaml
     hic_kl26z: &module_hic_kl26z
         - records/rtos/rtos-cm0.yaml
         - records/hic_hal/kl26z.yaml
@@ -62,6 +65,10 @@ projects:
         - *module_bl
         - *module_hic_k20dx
         - records/board/k20dx_bl.yaml
+    k22f_bl:
+        - *module_bl
+        - *module_hic_k22f
+        - records/board/k22f_bl.yaml
     lpc4322_bl:
         - *module_bl
         - *module_hic_lpc4322
