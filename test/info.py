@@ -47,6 +47,7 @@ PROJECT_RELEASE_INFO = {
     ("k20dx_frdmke15z_if",                          True,       0x8000,     "bin"       ),
     ("k20dx_twrke18f_if",                           True,       0x8000,     "bin"       ),
     ("k20dx_hvpke18f_if",                           True,       0x8000,     "bin"       ),
+    ("k20dx_tinyk20_if",                            False,      0x8000,     "bin"       ),
     ("lpc11u35_archble_if",                         False,      0x0000,     "bin"       ),
     ("lpc11u35_archpro_if",                         False,      0x0000,     "bin"       ),
     #("lpc11u35_archmax_if",                        False,      0x0000,     "bin"       ),  # Unsupported currently
@@ -123,6 +124,7 @@ SUPPORTED_CONFIGURATIONS = [
     (   0x7403,     'lpc11u35_6lowpan_borderrouterusb_if',      None,               'mbed-6LoWPAN-Border-Router-USB'        ),
     (   0x7404,     'lpc11u35_6lowpan_borderrouterethernet_if', None,               'mbed-6LoWPAN-Border-Router-ETHERNET'   ),
     (   0xC000,     'lpc11u35_cocorico_if',                     None,               None                                    ), # TODO - set target to 'CoCo-ri-Co' when mbed-os supports this
+    (   0xC004,     'k20dx_tinyk20_if',                        'k20dx_bl',          None                                    ),
     (   0x5500,     'lpc11u35_gr_peach_if',                     None,               'Renesas-GR-PEACH'                      ),
 ]
 

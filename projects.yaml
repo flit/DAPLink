@@ -162,6 +162,10 @@ projects:
         - *module_if
         - *module_hic_k20dx
         - records/board/xDot-L151.yaml
+    k20dx_tinyk20_if:
+        - *module_if
+        - *module_hic_k20dx
+        - records/board/tinyk20.yaml
     lpc11u35_lpc812xpresso_if:
         - *module_if
         - *module_hic_lpc11u35

@@ -1,6 +1,6 @@
 /**
  * @file    gpio.c
- * @brief   
+ * @brief
  *
  * DAPLink Interface Firmware
  * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
@@ -53,9 +53,9 @@ void gpio_init(void)
     LED_CONNECTED_GPIO->PDDR = 1UL << LED_CONNECTED_BIT;
     // led on
     LED_CONNECTED_GPIO->PCOR  |= 1UL << LED_CONNECTED_BIT;
-    // reset button configured as gpio input
+    // reset button configured as gpio input with internal pullup enabled
     PIN_nRESET_GPIO->PDDR &= ~PIN_nRESET;
-    PIN_nRESET_PORT->PCR[PIN_nRESET_BIT] = PORT_PCR_MUX(1);
+    PIN_nRESET_PORT->PCR[PIN_nRESET_BIT] = PORT_PCR_MUX(1) | PORT_PCR_PE(1) | PORT_PCR_PS(1);
 
     // Keep powered off in bootloader mode
     // to prevent the target from effecting the state
