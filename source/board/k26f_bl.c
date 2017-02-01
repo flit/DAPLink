@@ -24,7 +24,7 @@
 const char *board_id   = "0000";
 
 // k26f target information
-const target_cfg_t target_device = {
+target_cfg_t target_device = {
     .sector_size    = 4096,
     // Assume memory is regions are same size. Flash algo should ignore requests
     //  when variable sized sectors exist
