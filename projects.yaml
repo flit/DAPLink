@@ -89,7 +89,7 @@ projects:
         - *module_if
         - *module_hic_k20dx
         - records/board/frdmkw24f.yaml
-    k20dx_frdmkw41f_if:
+    k20dx_frdmkw41z_if:
         - *module_if
         - *module_hic_k20dx
         - records/board/frdmkw41z.yaml
@@ -173,6 +173,10 @@ projects:
         - *module_if
         - *module_hic_k20dx
         - records/board/xDot-L151.yaml
+    k22f_usbkw41z_if:
+        - *module_if
+        - *module_hic_k22f
+        - records/board/usbkw41z.yaml
     lpc11u35_lpc812xpresso_if:
         - *module_if
         - *module_hic_lpc11u35

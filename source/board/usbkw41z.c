@@ -1,6 +1,6 @@
 /**
- * @file    frdmkw41z.c
- * @brief   board ID for the NXP FRDM-KW41Z board
+ * @file    usbkw41z.c
+ * @brief   board ID for the NXP USB-KW41Z board
  *
  * DAPLink Interface Firmware
  * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
@@ -21,7 +21,7 @@
 
 #include "virtual_fs.h"
 
-const char *board_id = "0201";
+const char *board_id = "0202";
 
 // Override default behavior
 //
@@ -31,7 +31,7 @@ const char *board_id = "0201";
 __attribute__((aligned(4)))
 const vfs_filename_t daplink_url_name =       "PRODINFOHTM";
 __attribute__((aligned(4)))
-const vfs_filename_t daplink_drive_name =     "FRDM-KW41Z";
+const vfs_filename_t daplink_drive_name =     "USB-KW41Z";
 __attribute__((aligned(4)))
-const char *const daplink_target_url = "http://www.nxp.com/frdm-kw41z";
+const char *const daplink_target_url = "http://www.nxp.com/usb-kw41z";
 
