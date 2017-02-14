@@ -1,6 +1,6 @@
 /**
  * @file    target.c
- * @brief   Target information for the k24f
+ * @brief   Target information for the lpc1114
  *
  * DAPLink Interface Firmware
  * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
@@ -21,16 +21,17 @@
 
 #include "target_config.h"
 
-// The file flash_blob.c must only be included in target.c
-#include "flash_blob.c"
+// FlashAlgo
+#include "flash_blob.h"
+#include "tz10xx_prog_blob.h"
 
 // target information
 target_cfg_t target_device = {
-    .sector_size    = 4096,
-    .sector_cnt     = (KB(256) / 4096),
+    .sector_size    = 1024,
+    .sector_cnt     = (MB(1) / 1024),
     .flash_start    = 0,
-    .flash_end      = KB(256),
-    .ram_start      = 0x1FFF0000,
-    .ram_end        = 0x20030000,
+    .flash_end      = MB(1),
+    .ram_start      = 0x20000000,
+    .ram_end        = 0x20008000,
     .flash_algo     = (program_target_t *) &flash,
 };
