@@ -30,15 +30,15 @@
 #include "settings.h"
 #include "target_reset.h"
 #include "daplink.h"
-#include "IO_config.h"      // for NVIC_SystemReset
+#include "IO_Config.h"      // for NVIC_SystemReset
 #include "version_git.h"
 #include "info.h"
 #include "gpio.h"           // for gpio_get_sw_reset
 #include "flash_intf.h"     // for flash_intf_target
 
 // Must be bigger than 4x the flash size of the biggest supported
-// device.  This is to accomidate for hex file programming.
-static const uint32_t disc_size = MB(8);
+// device.  This is to accomodate for hex file programming.
+static const uint32_t disc_size = MB(64);
 
 static const char mbed_redirect_file[] =
     "<!doctype html>\r\n"
@@ -61,6 +61,7 @@ static uint8_t file_buffer[VFS_SECTOR_SIZE];
 static char assert_buf[64 + 1];
 static uint16_t assert_line;
 static assert_source_t assert_source;
+static uint32_t remount_count;
 
 static uint32_t get_file_size(vfs_read_cb_t read_func);
 
@@ -160,6 +161,12 @@ void vfs_user_file_change_handler(const vfs_filename_t filename, vfs_file_change
         } else if (!memcmp(filename, "ERASE   ACT", sizeof(vfs_filename_t))) {
             erase_target();
             vfs_mngr_fs_remount();
+        } else if (!memcmp(filename, "OVFL_ON CFG", sizeof(vfs_filename_t))) {
+            config_set_overflow_detect(true);
+            vfs_mngr_fs_remount();
+        } else if (!memcmp(filename, "OVFL_OFFCFG", sizeof(vfs_filename_t))) {
+            config_set_overflow_detect(false);
+            vfs_mngr_fs_remount();
         }
     }
 
@@ -183,6 +190,8 @@ void vfs_user_disconnecting()
     if (daplink_is_interface() && config_ram_get_hold_in_bl()) {
         NVIC_SystemReset();
     }
+
+    remount_count++;
 }
 
 // Get the filesize from a filesize callback.
@@ -231,6 +240,9 @@ static uint32_t read_file_details_txt(uint32_t sector_offset, uint8_t *data, uin
     pos += util_write_string(buf + pos, "\r\n");
     pos += util_write_string(buf + pos, "Automation allowed: ");
     pos += util_write_string(buf + pos, config_get_automation_allowed() ? "1" : "0");
+    pos += util_write_string(buf + pos, "\r\n");
+    pos += util_write_string(buf + pos, "Overflow detection: ");
+    pos += util_write_string(buf + pos, config_get_overflow_detect() ? "1" : "0");
     pos += util_write_string(buf + pos, "\r\n");
     // Current mode
     mode_str = daplink_is_bootloader() ? "Bootloader" : "Interface";
@@ -287,6 +299,11 @@ static uint32_t read_file_details_txt(uint32_t sector_offset, uint8_t *data, uin
     // CRC of the interface
     pos += util_write_string(buf + pos, "Interface CRC: 0x");
     pos += util_write_hex32(buf + pos, info_get_crc_interface());
+    pos += util_write_string(buf + pos, "\r\n");
+
+    // Number of remounts that have occurred
+    pos += util_write_string(buf + pos, "Remount count: ");
+    pos += util_write_uint32(buf + pos, remount_count);
     pos += util_write_string(buf + pos, "\r\n");
     return pos;
 }
