@@ -1,6 +1,6 @@
 /**
- * @file    frdmkw24f.c
- * @brief   board ID for the NXP FRDM-KW24F board
+ * @file    frdmkw24d.c
+ * @brief   board ID for the NXP FRDM-KW24D board
  *
  * DAPLink Interface Firmware
  * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
@@ -19,5 +19,19 @@
  * limitations under the License.
  */
 
+#include "virtual_fs.h"
+
 const char *board_id = "0250";
+
+// Override default behavior
+//
+// URL_NAME and DRIVE_NAME must be 11 characters excluding
+// the null terminated character
+// Note - 4 byte alignemnt required as workaround for ARMCC compiler bug with weak references
+__attribute__((aligned(4)))
+const vfs_filename_t daplink_url_name =       "PRODINFOHTM";
+__attribute__((aligned(4)))
+const vfs_filename_t daplink_drive_name =     "FRDM-KW24D";
+__attribute__((aligned(4)))
+const char *const daplink_target_url = "http://www.nxp.com/frdm-kw24d";
 
