@@ -4,6 +4,7 @@
  *
  * DAPLink Interface Firmware
  * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
+ * Copyright (c) 2016-2017 NXP
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -28,6 +29,9 @@ void hic_init(void);
 
 //! @brief Enable clocks required for USB operation.
 void hic_enable_usb_clocks(void);
+
+//! @brief Enable power to the target.
+void hic_power_target(void);
 
 #if defined(__cplusplus)
 }

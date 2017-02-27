@@ -4,6 +4,7 @@
  *
  * DAPLink Interface Firmware
  * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
+ * Copyright (c) 2016-2017 NXP
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -20,6 +21,7 @@
  */
 
 #include "hic_init.h"
+#include "gpio.h"
 #include "fsl_clock.h"
 #include "usb_phy.h"
 #include "util.h"
@@ -43,8 +45,16 @@ static void fll_delay(void)
 // This IRQ handler will be invoked if VDD falls below the trip point.
 void LVD_LVW_IRQHandler(void)
 {
-    util_assert(false && "low voltage warning tripped");
-    busy_wait(100000);
+    if (PMC->LVDSC1 & PMC_LVDSC1_LVDF_MASK)
+    {
+        util_assert(false && "low voltage detect tripped");
+        PMC->LVDSC1 |= PMC_LVDSC1_LVDACK_MASK;
+    }
+    if (PMC->LVDSC2 & PMC_LVDSC2_LVWF_MASK)
+    {
+        util_assert(false && "low voltage warning tripped");
+        PMC->LVDSC2 |= PMC_LVDSC2_LVWACK_MASK;
+    }
 }
 
 //! - MPU is disabled and gated.
@@ -63,9 +73,12 @@ void hic_init(void)
     // Invalidate and enable code cache.
     LMEM->PCCCR = LMEM_PCCCR_GO_MASK | LMEM_PCCCR_INVW1_MASK | LMEM_PCCCR_INVW0_MASK | LMEM_PCCCR_ENCACHE_MASK;
 
-    // Enable LVW IRQ.
-    PMC->LVDSC2 = PMC_LVDSC2_LVWIE_MASK | PMC_LVDSC2_LVWV(3); // high trip point
-    NVIC_EnableIRQ(LVD_LVW_IRQn);
+    // Enable LVD/LVW IRQ.
+    PMC->LVDSC1 |= PMC_LVDSC1_LVDACK_MASK;
+    PMC->LVDSC1 = PMC_LVDSC1_LVDIE_MASK | PMC_LVDSC1_LVDV(0); // low trip point
+    PMC->LVDSC2 |= PMC_LVDSC2_LVWACK_MASK;
+    PMC->LVDSC2 = PMC_LVDSC2_LVWIE_MASK | PMC_LVDSC2_LVWV(0); // low trip point
+//     NVIC_EnableIRQ(LVD_LVW_IRQn);
 
     // Disable USB inrush current limiter.
     SIM->USBPHYCTL |= SIM_USBPHYCTL_USBDISILIM_MASK;
@@ -81,6 +94,8 @@ void hic_enable_usb_clocks(void)
 {
     // Enable external oscillator and 32kHz IRC.
     MCG->C1 |= MCG_C1_IRCLKEN_MASK; // Select 32k IR.
+    // Delay at least 100µs for 32kHz IRQ to stabilize.
+    fll_delay();
     // Configure OSC for very high freq, low power mode.
     MCG->C2 = (MCG->C2 & ~(MCG_C2_RANGE_MASK | MCG_C2_HGO_MASK)) | MCG_C2_RANGE(2);
     OSC0->CR |= OSC_CR_ERCLKEN_MASK; // Enable OSC.
@@ -113,4 +128,26 @@ void hic_enable_usb_clocks(void)
     USB_EhciPhyInit(0, CPU_XTAL_CLK_HZ);
 
     SystemCoreClockUpdate();
+}
+
+void hic_power_target(void)
+{
+    // Keep powered off in bootloader mode
+    // to prevent the target from effecting the state
+    // of the reset line / reset button
+    if (!daplink_is_bootloader()) {
+        // configure pin as GPIO
+        PIN_POWER_EN_PORT->PCR[PIN_POWER_EN_BIT] = PORT_PCR_MUX(1);
+        // force always on logic 1
+        PIN_POWER_EN_GPIO->PSOR = 1UL << PIN_POWER_EN_BIT;
+        PIN_POWER_EN_GPIO->PDDR |= 1UL << PIN_POWER_EN_BIT;
+
+        // Let the voltage rails stabilize.  This is especailly important
+        // during software resets, since the target's 3.3v rail can take
+        // 20-50ms to drain.  During this time the target could be driving
+        // the reset pin low, causing the bootloader to think the reset
+        // button is pressed.
+        // Note: With optimization set to -O2 the value 5115 delays for ~1ms @ 20.9Mhz core
+        busy_wait(5115 * 50);
+    }
 }

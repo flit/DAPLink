@@ -4,6 +4,7 @@
  *
  * DAPLink Interface Firmware
  * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
+ * Copyright (c) 2016-2017 NXP
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -233,7 +234,7 @@ int32_t uart_read_data(uint8_t *data, uint16_t size)
     return cnt;
 }
 
-void UART1_RX_TX_IRQHandler(void)
+void UART0_RX_TX_IRQHandler(void)
 {
     uint32_t s1;
     volatile uint8_t errorData;
