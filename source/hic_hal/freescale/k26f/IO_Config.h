@@ -33,29 +33,38 @@ COMPILER_ASSERT(DAPLINK_HIC_ID == DAPLINK_HIC_ID_K26F);
 // Debug Port I/O Pins
 
 // SWCLK Pin                    PTC5
+// (SDA_SWD_SCK on schematic)
 #define PIN_SWCLK_PORT          PORTC
 #define PIN_SWCLK_GPIO          PTC
 #define PIN_SWCLK_BIT           5
 
 // SWDIO Out Pin                PTC6
+// (SDA_SWD_DOUT on schematic)
 #define PIN_SWDIO_OUT_PORT      PORTC
 #define PIN_SWDIO_OUT_GPIO      PTC
 #define PIN_SWDIO_OUT_BIT       6
 
 // SWDIO In Pin                 PTC7
+// (SDA_SWD_DIN on schematic)
 #define PIN_SWDIO_IN_PORT       PORTC
 #define PIN_SWDIO_IN_GPIO       PTC
 #define PIN_SWDIO_IN_BIT        7
 
 // SWDIO Output Enable Pin     PTA5
+// (SDA_SWD_OE on schematic)
 #define PIN_SWDIO_OE_PORT      PORTA
 #define PIN_SWDIO_OE_GPIO      PTA
 #define PIN_SWDIO_OE_BIT       5
 
-// SWD Enable Pin               PTA4
+// SWD Enable Pin              PTA4
+// (SDA_SWD_EN on schematic)
 #define PIN_SWD_OE_PORT        PORTA
 #define PIN_SWD_OE_GPIO        PTA
+#if SDA_SWD_OE_PIN_A4
 #define PIN_SWD_OE_BIT         4
+#else
+#define PIN_SWD_OE_BIT         9
+#endif
 
 // nRESET Pin                   PTA7
 #define PIN_nRESET_PORT         PORTA
@@ -64,10 +73,18 @@ COMPILER_ASSERT(DAPLINK_HIC_ID == DAPLINK_HIC_ID_K26F);
 #define PIN_nRESET              (1 << PIN_nRESET_BIT)
 
 // nRESET Pin Level Shifter Enable PTA6
+// (SDA_LVLRST_EN on schematic)
 #define PIN_nRESET_EN_PORT      PORTA
 #define PIN_nRESET_EN_GPIO      PTA
 #define PIN_nRESET_EN_BIT       6
 #define PIN_nRESET_EN           (1 << PIN_nRESET_EN_BIT)
+
+// SWD Detect Pin               PTA8
+// (x_SWD_DETECT on schematic)
+#define PIN_SWD_DETECT_PORT     PORTA
+#define PIN_SWD_DETECTGPIO      PTA
+#define PIN_SWD_DETECT_BIT      8
+#define PIN_SWD_DETECT          (1 << PIN_SWD_DETECT_BIT)
 
 
 // Power monitor
