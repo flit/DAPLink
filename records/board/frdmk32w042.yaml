@@ -1,0 +1,7 @@
+common:
+    sources:
+        board:
+            - source/board/frdmk32w042.c
+        target:
+            - source/target/freescale/k32w042/target.c
+            - source/target/freescale/target_reset_K32_series.c
