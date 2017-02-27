@@ -23,6 +23,10 @@
 #include "string.h"
 #include "fsl_device_registers.h"
 #include "uart.h"
+#include "util.h"
+#include "cortex_m.h"
+#include "circ_buf.h"
+#include "settings.h" // for config_get_overflow_detect
 
 #define UART_INSTANCE (UART0)
 #define UART_IRQ (UART0_RX_TX_IRQn)
@@ -31,46 +35,39 @@ extern uint32_t SystemCoreClock;
 
 static void clear_buffers(void);
 
-// Size must be 2^n for using quick wrap around
-#define  BUFFER_SIZE (512)
+#define RX_OVRF_MSG         "<DAPLink:Overflow>\n"
+#define RX_OVRF_MSG_SIZE    (sizeof(RX_OVRF_MSG) - 1)
+#define BUFFER_SIZE         (512)
 
-struct {
-    uint8_t  data[BUFFER_SIZE];
-    volatile uint32_t idx_in;
-    volatile uint32_t idx_out;
-    volatile uint32_t cnt_in;
-    volatile uint32_t cnt_out;
-} write_buffer, read_buffer;
 
-uint32_t tx_in_progress = 0;
+circ_buf_t write_buffer;
+uint8_t write_buffer_data[BUFFER_SIZE];
+circ_buf_t read_buffer;
+uint8_t read_buffer_data[BUFFER_SIZE];
 
 void clear_buffers(void)
 {
-    memset((void *)&read_buffer, 0xBB, sizeof(read_buffer.data));
-    read_buffer.idx_in = 0;
-    read_buffer.idx_out = 0;
-    read_buffer.cnt_in = 0;
-    read_buffer.cnt_out = 0;
-    memset((void *)&write_buffer, 0xBB, sizeof(read_buffer.data));
-    write_buffer.idx_in = 0;
-    write_buffer.idx_out = 0;
-    write_buffer.cnt_in = 0;
-    write_buffer.cnt_out = 0;
+    util_assert(!(UART1->C2 & UART_C2_TIE_MASK));
+    circ_buf_init(&write_buffer, write_buffer_data, sizeof(write_buffer_data));
+    circ_buf_init(&read_buffer, read_buffer_data, sizeof(read_buffer_data));
 }
 
 int32_t uart_initialize(void)
 {
     NVIC_DisableIRQ(UART_IRQ);
-    clear_buffers();
-
-    // enable clk PORTB
+    // enable clk PORTC
     SIM->SCGC5 |= SIM_SCGC5_PORTB_MASK;
-
     // enable clk uart
     SIM->SCGC4 |= SIM_SCGC4_UART0_MASK;
 
     // disable interrupt
     NVIC_DisableIRQ(UART_IRQ);
+    // transmitter and receiver disabled
+    UART_INSTANCE->C2 &= ~(UART_C2_RE_MASK | UART_C2_TE_MASK);
+    // disable interrupt
+    UART_INSTANCE->C2 &= ~(UART_C2_RIE_MASK | UART_C2_TIE_MASK);
+
+    clear_buffers();
 
     // Enable receiver and transmitter
     UART_INSTANCE->C2 |= UART_C2_RE_MASK | UART_C2_TE_MASK;
@@ -101,10 +98,9 @@ int32_t uart_reset(void)
 {
     // disable interrupt
     NVIC_DisableIRQ(UART_IRQ);
-    clear_buffers();
     // disable TIE interrupt
     UART_INSTANCE->C2 &= ~(UART_C2_TIE_MASK);
-    tx_in_progress = 0;
+    clear_buffers();
     // enable interrupt
     NVIC_EnableIRQ(UART_IRQ);
     return 1;
@@ -118,6 +114,7 @@ int32_t uart_set_configuration(UART_Configuration *config)
     uint32_t dll;
     // disable interrupt
     NVIC_DisableIRQ(UART_IRQ);
+    UART_INSTANCE->C2 &= ~(UART_C2_RIE_MASK | UART_C2_TIE_MASK);
     // Disable receiver and transmitter while updating
     UART_INSTANCE->C2 &= ~(UART_C2_RE_MASK | UART_C2_TE_MASK);
     clear_buffers();
@@ -159,6 +156,7 @@ int32_t uart_set_configuration(UART_Configuration *config)
     // Enable UART interrupt
     NVIC_ClearPendingIRQ(UART_IRQ);
     NVIC_EnableIRQ(UART_IRQ);
+    UART_INSTANCE->C2 |= UART_C2_RIE_MASK;
     return 1;
 }
 
@@ -169,69 +167,29 @@ int32_t uart_get_configuration(UART_Configuration *config)
 
 int32_t uart_write_free(void)
 {
-    return BUFFER_SIZE - (write_buffer.cnt_in - write_buffer.cnt_out);
+    return circ_buf_count_free(&write_buffer);
 }
 
 int32_t uart_write_data(uint8_t *data, uint16_t size)
 {
+    cortex_int_state_t state;
     uint32_t cnt;
-    int16_t  len_in_buf;
 
-    if (size == 0) {
-        return 0;
-    }
+    cnt = circ_buf_write(&write_buffer, data, size);
 
-    cnt = 0;
-
-    while (size--) {
-        len_in_buf = write_buffer.cnt_in - write_buffer.cnt_out;
-
-        if (len_in_buf < BUFFER_SIZE) {
-            write_buffer.data[write_buffer.idx_in++] = *data++;
-            write_buffer.idx_in &= (BUFFER_SIZE - 1);
-            write_buffer.cnt_in++;
-            cnt++;
-        }
-    }
-
-    if (!tx_in_progress) {
-        // Wait for D register to be free
-        while (!(UART_INSTANCE->S1 & UART_S1_TDRE_MASK)) { }
-
-        tx_in_progress = 1;
-        // Write the first byte into D
-        UART_INSTANCE->D = write_buffer.data[write_buffer.idx_out++];
-        write_buffer.idx_out &= (BUFFER_SIZE - 1);
-        write_buffer.cnt_out++;
-        // enable TX interrupt
+    // Atomically enable TX
+    state = cortex_int_get_and_disable();
+    if (circ_buf_count_used(&write_buffer)) {
         UART_INSTANCE->C2 |= UART_C2_TIE_MASK;
     }
+    cortex_int_restore(state);
 
     return cnt;
 }
 
 int32_t uart_read_data(uint8_t *data, uint16_t size)
 {
-    uint32_t cnt;
-
-    if (size == 0) {
-        return 0;
-    }
-
-    cnt = 0;
-
-    while (size--) {
-        if (read_buffer.cnt_in != read_buffer.cnt_out) {
-            *data++ = read_buffer.data[read_buffer.idx_out++];
-            read_buffer.idx_out &= (BUFFER_SIZE - 1);
-            read_buffer.cnt_out++;
-            cnt++;
-        } else {
-            break;
-        }
-    }
-
-    return cnt;
+    return circ_buf_read(&read_buffer, data, size);
 }
 
 void UART0_RX_TX_IRQHandler(void)
@@ -240,20 +198,26 @@ void UART0_RX_TX_IRQHandler(void)
     volatile uint8_t errorData;
     // read interrupt status
     s1 = UART_INSTANCE->S1;
+    // mask off interrupts that are not enabled
+    if (!(UART_INSTANCE->C2 & UART_C2_RIE_MASK)) {
+        s1 &= ~UART_S1_RDRF_MASK;
+    }
+    if (!(UART_INSTANCE->C2 & UART_C2_TIE_MASK)) {
+        s1 &= ~UART_S1_TDRE_MASK;
+    }
 
     // handle character to transmit
-    if (write_buffer.cnt_in != write_buffer.cnt_out) {
-        // if TDRE is empty
-        if (s1 & UART_S1_TDRE_MASK) {
-            UART_INSTANCE->D = write_buffer.data[write_buffer.idx_out++];
-            write_buffer.idx_out &= (BUFFER_SIZE - 1);
-            write_buffer.cnt_out++;
-            tx_in_progress = 1;
+    if (s1 & UART_S1_TDRE_MASK) {
+        // Assert that there is data in the buffer
+        util_assert(circ_buf_count_used(&write_buffer) > 0);
+
+        // Send out data
+        UART_INSTANCE->D = circ_buf_pop(&write_buffer);
+        // Turn off the transmitter if that was the last byte
+        if (circ_buf_count_used(&write_buffer) == 0) {
+            // disable TIE interrupt
+            UART_INSTANCE->C2 &= ~(UART_C2_TIE_MASK);
         }
-    } else {
-        // disable TIE interrupt
-        UART_INSTANCE->C2 &= ~(UART_C2_TIE_MASK);
-        tx_in_progress = 0;
     }
 
     // handle received character
@@ -261,9 +225,18 @@ void UART0_RX_TX_IRQHandler(void)
         if ((s1 & UART_S1_NF_MASK) || (s1 & UART_S1_FE_MASK)) {
             errorData = UART_INSTANCE->D;
         } else {
-            read_buffer.data[read_buffer.idx_in++] = UART_INSTANCE->D;
-            read_buffer.idx_in &= (BUFFER_SIZE - 1);
-            read_buffer.cnt_in++;
+            uint32_t free;
+            uint8_t data;
+
+            data = UART_INSTANCE->D;
+            free = circ_buf_count_free(&read_buffer);
+            if (free > RX_OVRF_MSG_SIZE) {
+                circ_buf_push(&read_buffer, data);
+            } else if ((RX_OVRF_MSG_SIZE == free) && config_get_overflow_detect()) {
+                circ_buf_write(&read_buffer, (uint8_t*)RX_OVRF_MSG, RX_OVRF_MSG_SIZE);
+            } else {
+                // Drop character
+            }
         }
     }
 }
