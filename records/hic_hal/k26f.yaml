@@ -1,6 +1,6 @@
 common:
     target:
-        - mk64fn1m0xxx12
+        - mk64fn1m0xxx12 # Closest device.
     macros:
         - INTERFACE_K26F
         - CPU_MK26FN2M0VMD18

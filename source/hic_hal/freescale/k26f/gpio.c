@@ -4,6 +4,7 @@
  *
  * DAPLink Interface Firmware
  * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
+ * Copyright (c) 2016-2017 NXP
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -27,16 +28,6 @@
 #include "daplink.h"
 #include "hic_init.h"
 
-static void busy_wait(uint32_t cycles)
-{
-    volatile uint32_t i;
-    i = cycles;
-
-    while (i > 0) {
-        i--;
-    }
-}
-
 void gpio_init(void)
 {
     hic_init();
@@ -55,7 +46,7 @@ void gpio_init(void)
     LED_CONNECTED_GPIO->PDOR = 1UL << LED_CONNECTED_BIT;
     LED_CONNECTED_GPIO->PDDR = 1UL << LED_CONNECTED_BIT;
     // led on
-    LED_CONNECTED_GPIO->PCOR  |= 1UL << LED_CONNECTED_BIT;
+    LED_CONNECTED_GPIO->PCOR = 1UL << LED_CONNECTED_BIT;
     // reset button configured as gpio input
     PIN_nRESET_GPIO->PDDR &= ~PIN_nRESET;
     PIN_nRESET_PORT->PCR[PIN_nRESET_BIT] = PORT_PCR_MUX(1);
@@ -64,25 +55,6 @@ void gpio_init(void)
             PORT_PCR_ODE_MASK;  /* Open-drain */
     PIN_nRESET_EN_GPIO->PSOR  = PIN_nRESET_EN;
     PIN_nRESET_EN_GPIO->PDDR |= PIN_nRESET_EN;
-
-    // Keep powered off in bootloader mode
-    // to prevent the target from effecting the state
-    // of the reset line / reset button
-    if (!daplink_is_bootloader()) {
-        // configure pin as GPIO
-        PIN_POWER_EN_PORT->PCR[PIN_POWER_EN_BIT] = PORT_PCR_MUX(1);
-        // force always on logic 1
-        PIN_POWER_EN_GPIO->PDOR |= 1UL << PIN_POWER_EN_BIT;
-        PIN_POWER_EN_GPIO->PDDR |= 1UL << PIN_POWER_EN_BIT;
-
-        // Let the voltage rails stabilize.  This is especailly important
-        // during software resets, since the target's 3.3v rail can take
-        // 20-50ms to drain.  During this time the target could be driving
-        // the reset pin low, causing the bootloader to think the reset
-        // button is pressed.
-        // Note: With optimization set to -O2 the value 5115 delays for ~1ms @ 20.9Mhz core
-        busy_wait(5115 * 50);
-    }
 }
 
 void gpio_set_hid_led(gpio_led_state_t state)

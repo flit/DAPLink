@@ -319,6 +319,7 @@ void USBD_Configure(uint32_t cfg)
 
         BufUsed = 2 * USBD_MAX_PACKET0;
     } else {
+        hic_power_target();
     }
 }
 
