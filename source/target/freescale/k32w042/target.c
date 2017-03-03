@@ -26,11 +26,11 @@
 
 // target information
 target_cfg_t target_device = {
-    .sector_size    = 1024,
-    .sector_cnt     = (KB(256) / 1024),
+    .sector_size    = 4096,
+    .sector_cnt     = (KB(1024) / 4096),
     .flash_start    = 0,
-    .flash_end      = KB(256),
-    .ram_start      = 0x1FFF8000,
-    .ram_end        = 0x20018000,
+    .flash_end      = KB(1024),
+    .ram_start      = 0x20000000, // M4 DTCM
+    .ram_end        = 0x20030000,
     .flash_algo     = (program_target_t *) &flash,
 };
