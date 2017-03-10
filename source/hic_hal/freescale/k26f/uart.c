@@ -47,7 +47,7 @@ uint8_t read_buffer_data[BUFFER_SIZE];
 
 void clear_buffers(void)
 {
-    util_assert(!(UART1->C2 & UART_C2_TIE_MASK));
+    util_assert(!(UART_INSTANCE->C2 & UART_C2_TIE_MASK));
     circ_buf_init(&write_buffer, write_buffer_data, sizeof(write_buffer_data));
     circ_buf_init(&read_buffer, read_buffer_data, sizeof(read_buffer_data));
 }
