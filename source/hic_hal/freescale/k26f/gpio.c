@@ -55,6 +55,12 @@ void gpio_init(void)
             PORT_PCR_ODE_MASK;  /* Open-drain */
     PIN_nRESET_EN_GPIO->PSOR  = PIN_nRESET_EN;
     PIN_nRESET_EN_GPIO->PDDR |= PIN_nRESET_EN;
+
+    // Enable pulldowns on power monitor control signals to reduce power consumption.
+    PIN_CTRL0_PORT->PCR[PIN_CTRL0_BIT] = PORT_PCR_MUX(1) | PORT_PCR_PE_MASK | PORT_PCR_PS(0);
+    PIN_CTRL1_PORT->PCR[PIN_CTRL1_BIT] = PORT_PCR_MUX(1) | PORT_PCR_PE_MASK | PORT_PCR_PS(0);
+    PIN_CTRL2_PORT->PCR[PIN_CTRL2_BIT] = PORT_PCR_MUX(1) | PORT_PCR_PE_MASK | PORT_PCR_PS(0);
+    PIN_CTRL3_PORT->PCR[PIN_CTRL3_BIT] = PORT_PCR_MUX(1) | PORT_PCR_PE_MASK | PORT_PCR_PS(0);
 }
 
 void gpio_set_hid_led(gpio_led_state_t state)
