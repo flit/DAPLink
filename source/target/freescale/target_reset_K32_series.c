@@ -110,43 +110,10 @@ uint8_t target_unlock_sequence(void)
     return 1;
 }
 
-// Check Flash Configuration Field bytes at address 0x400-0x40f to ensure that flash security
-// won't be enabled.
-//
-// FCF bytes:
-// [0x0-0x7]=backdoor key
-// [0x8-0xb]=flash protection bytes
-// [0xc]=FSEC:
-//      [7:6]=KEYEN (2'b10 is backdoor key enabled, all others backdoor key disabled)
-//      [5:4]=MEEN (2'b10 mass erase disabled, all other mass erase enabled)
-//      [3:2]=FSLACC (2'b00 and 2'b11 factory access enabled, 2'b01 and 2'b10 factory access disabled)
-//      [1:0]=SEC (2'b10 flash security disabled, all other flash security enabled)
-// [0xd]=FOPT
-// [0xe]=EEPROM protection bytes (FlexNVM devices only)
-// [0xf]=data flash protection bytes (FlexNVM devices only)
-//
-// This function checks that:
-// - FSEC does not disable mass erase or secure the device.
-//
+// K32 devices do not use the traditional location of the FCF at address 0x400. Instead,
+// these fields are stored in IFR. Thus, there is nothing to modify.
 uint8_t security_bits_set(uint32_t addr, uint8_t *data, uint32_t size)
 {
-    const uint32_t fsec_addr = 0x40C;
-
-    if ((addr <= fsec_addr) && (addr + size) > fsec_addr) {
-        uint8_t fsec = data[fsec_addr - addr];
-
-        // make sure we can unsecure the device or dont program at all
-        if ((fsec & 0x30) == 0x20) {
-            // Dont allow programming mass-erase disabled state
-            return 1;
-        }
-
-        // Security is OK long as we can mass-erase (comment the following out to enable target security)
-        if ((fsec & 0x03) != 0x02) {
-            return 1;
-        }
-    }
-
     return 0;
 }
 
