@@ -1,6 +1,6 @@
 /**
  * @file    gpio.c
- * @brief   
+ * @brief
  *
  * DAPLink Interface Firmware
  * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
@@ -99,11 +99,6 @@ void gpio_set_msc_led(gpio_led_state_t state)
 uint8_t gpio_get_sw_reset(void)
 {
     return (PIN_nRESET_GPIO->PDIR & PIN_nRESET) ? 1 : 0;
-}
-
-uint8_t GPIOGetButtonState(void)
-{
-    return 0;
 }
 
 void target_forward_reset(bool assert_reset)

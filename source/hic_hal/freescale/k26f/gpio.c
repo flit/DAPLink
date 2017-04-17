@@ -61,14 +61,17 @@ void gpio_init(void)
     PIN_CTRL1_PORT->PCR[PIN_CTRL1_BIT] = PORT_PCR_MUX(1) | PORT_PCR_PE_MASK | PORT_PCR_PS(0);
     PIN_CTRL2_PORT->PCR[PIN_CTRL2_BIT] = PORT_PCR_MUX(1) | PORT_PCR_PE_MASK | PORT_PCR_PS(0);
     PIN_CTRL3_PORT->PCR[PIN_CTRL3_BIT] = PORT_PCR_MUX(1) | PORT_PCR_PE_MASK | PORT_PCR_PS(0);
+
+    // Enable pulldown on GPIO0_B to prevent it floating.
+    PIN_GPIO0_B_PORT->PCR[PIN_GPIO0_B_BIT] = PORT_PCR_MUX(1) | PORT_PCR_PE_MASK | PORT_PCR_PS(0);
 }
 
 void gpio_set_hid_led(gpio_led_state_t state)
 {
     if (state) {
-        LED_CONNECTED_GPIO->PCOR = 1UL << LED_CONNECTED_BIT; // LED on
+        LED_CONNECTED_GPIO->PCOR = LED_CONNECTED; // LED on
     } else {
-        LED_CONNECTED_GPIO->PSOR = 1UL << LED_CONNECTED_BIT; // LED off
+        LED_CONNECTED_GPIO->PSOR = LED_CONNECTED; // LED off
     }
 }
 
@@ -87,13 +90,8 @@ uint8_t gpio_get_sw_reset(void)
     return (PIN_nRESET_GPIO->PDIR & PIN_nRESET) ? 1 : 0;
 }
 
-uint8_t GPIOGetButtonState(void)
-{
-    return 0;
-}
-
 void target_forward_reset(bool assert_reset)
 {
     // Do nothing - reset button is already tied to the target
-    //              reset pin on k20dx interface hardware
+    //              reset pin on hic interface hardware
 }
