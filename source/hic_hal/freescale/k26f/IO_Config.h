@@ -93,51 +93,64 @@ COMPILER_ASSERT(DAPLINK_HIC_ID == DAPLINK_HIC_ID_K26F);
 #define PIN_G1_PORT          PORTE
 #define PIN_G1_GPIO          PTE
 #define PIN_G1_BIT           17
+#define PIN_G1               (1 << PIN_G1_BIT)
 
 // SDA_G2 Pin                PTE18
 #define PIN_G2_PORT          PORTE
 #define PIN_G2_GPIO          PTE
 #define PIN_G2_BIT           18
+#define PIN_G2               (1 << PIN_G2_BIT)
 
 // SDA_LOW_RANGE_EN Pin      PTE19
 #define PIN_LOW_RANGE_EN_PORT          PORTE
 #define PIN_LOW_RANGE_EN_GPIO          PTE
 #define PIN_LOW_RANGE_EN_BIT           19
+#define PIN_LOW_RANGE_EN               (1 << PIN_LOW_RANGE_EN_BIT)
 
 // SDA_CAL_EN Pin            PTE24
 #define PIN_CAL_EN_PORT      PORTE
 #define PIN_CAL_EN_GPIO      PTE
 #define PIN_CAL_EN_BIT       24
+#define PIN_CAL_EN           (1 << PIN_CAL_EN_BIT)
 
 // SDA_CTRL0 Pin             PTE25
 #define PIN_CTRL0_PORT       PORTE
 #define PIN_CTRL0_GPIO       PTE
 #define PIN_CTRL0_BIT        25
+#define PIN_CTRL0            (1 << PIN_CTRL0_BIT)
 
 // SDA_CTRL1 Pin             PTE26
 #define PIN_CTRL1_PORT       PORTE
 #define PIN_CTRL1_GPIO       PTE
 #define PIN_CTRL1_BIT        26
+#define PIN_CTRL1            (1 << PIN_CTRL1_BIT)
 
 // SDA_CTRL2 Pin             PTE27
 #define PIN_CTRL2_PORT       PORTE
 #define PIN_CTRL2_GPIO       PTE
 #define PIN_CTRL2_BIT        27
+#define PIN_CTRL2            (1 << PIN_CTRL2_BIT)
 
 // SDA_CTRL3 Pin             PTE28
 #define PIN_CTRL3_PORT       PORTE
 #define PIN_CTRL3_GPIO       PTE
 #define PIN_CTRL3_BIT        28
+#define PIN_CTRL3            (1 << PIN_CTRL3_BIT)
+
+
+// Misc target connections
 
 // SDA_GPIO0_B Pin           PTB22
 #define PIN_GPIO0_B_PORT     PORTB
 #define PIN_GPIO0_B_GPIO     PTB
 #define PIN_GPIO0_B_BIT      22
+#define PIN_GPIO0_B          (1 < PIN_GPIO0_B_BIT)
 
 // SDA_CLKOUT_B Pin          PTC
 #define PIN_CLKOUT_B_PORT    PORTC
 #define PIN_CLKOUT_B_GPIO    PTC
 #define PIN_CLKOUT_B_BIT     3
+#define PIN_CLKOUT_B         (1 << PIN_CLKOUT_B_BIT)
 
 
 // Power and fault detection
@@ -159,6 +172,7 @@ COMPILER_ASSERT(DAPLINK_HIC_ID == DAPLINK_HIC_ID_K26F);
 #define LED_CONNECTED_PORT      PORTD
 #define LED_CONNECTED_GPIO      PTD
 #define LED_CONNECTED_BIT       4
+#define LED_CONNECTED           (1 << LED_CONNECTED_BIT)
 
 // Target Running LED           Not available
 

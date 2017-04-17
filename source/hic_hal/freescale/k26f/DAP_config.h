@@ -157,7 +157,6 @@ static inline void PORT_SWD_SETUP(void)
     PIN_nRESET_GPIO->PSOR = PIN_nRESET;
     PIN_nRESET_GPIO->PDDR |= PIN_nRESET; //output
     PIN_nRESET_PORT->PCR[PIN_nRESET_BIT] = PORT_PCR_PS_MASK | PORT_PCR_PE_MASK | PORT_PCR_PFE_MASK | PORT_PCR_MUX(1);
-    PIN_nRESET_EN_GPIO->PSOR = PIN_nRESET_EN; // enable nRESET level shifter
 }
 
 /** Disable JTAG/SWD I/O Pins.
@@ -168,7 +167,6 @@ static inline void PORT_OFF(void)
 {
     PIN_SWDIO_OE_GPIO->PCOR = 1 << PIN_SWDIO_OE_BIT;
     PIN_SWD_OE_GPIO->PCOR   = 1 << PIN_SWD_OE_BIT;
-    PIN_nRESET_EN_GPIO->PCOR = PIN_nRESET_EN; // disable nRESET level shifter
     PIN_nRESET_GPIO->PSOR    = 1 << PIN_nRESET_BIT;
     PIN_nRESET_GPIO->PDDR &= ~PIN_nRESET; //input
     PIN_nRESET_PORT->PCR[PIN_nRESET_BIT] |= PORT_PCR_ISF_MASK;
@@ -428,10 +426,13 @@ static inline void DAP_SETUP(void)
             PORT_PCR_ODE_MASK;  /* Open-drain */
     PIN_nRESET_GPIO->PSOR  = 1 << PIN_nRESET_BIT;                    /* High level */
     PIN_nRESET_GPIO->PDDR &= ~(1 << PIN_nRESET_BIT);                    /* Input */
-    /* Configure I/O pin LVLRST_EN */
+    // Configure I/O pin LVLRST_EN
+    // The nRESET level translator is enabled by default. The translator is auto-
+    // direction sensing. So as long as we don't drive nRESET from our side, we won't
+    // interfere with another debug probe connected to the target SWD header.
     PIN_nRESET_EN_PORT->PCR[PIN_nRESET_EN_BIT]       = PORT_PCR_MUX(1)  |  /* GPIO */
             PORT_PCR_ODE_MASK;  /* Open-drain */
-    PIN_nRESET_EN_GPIO->PCOR  = PIN_nRESET_EN;                    /* Low level (disable) */
+    PIN_nRESET_EN_GPIO->PSOR  = PIN_nRESET_EN;                    /* High level */
     PIN_nRESET_EN_GPIO->PDDR |= PIN_nRESET_EN;                    /* Output */
     /* Configure LED */
     LED_CONNECTED_PORT->PCR[LED_CONNECTED_BIT] = PORT_PCR_MUX(1)  |  /* GPIO */
