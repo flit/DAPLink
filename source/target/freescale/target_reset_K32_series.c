@@ -1,6 +1,6 @@
 /**
- * @file    target_reset_Kseries.c
- * @brief   Target reset for the Kinetis K series
+ * @file    target_reset_K32series.c
+ * @brief   Target reset for the Kinetis K32 series
  *
  * DAPLink Interface Firmware
  * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
@@ -27,6 +27,16 @@
 #define MDM_CTRL    0x01000004
 #define MDM_IDR     0x010000fc
 #define MDM_ID      0x001c0040 // K32 series
+
+#define MDM_STATUS_FLASH_MASS_ERASE_ACKNOWLEDGE (1 << 0)
+#define MDM_STATUS_FLASH_READY (1 << 1)
+#define MDM_STATUS_SYSTEM_SECURITY (1 << 2)
+#define MDM_STATUS_MASS_ERASE_ENABLE (1 << 5)
+
+#define MDM_CTRL_FLASH_MASS_ERASE_IN_PROGRESS (1 << 0)
+#define MDM_CTRL_SYSTEM_RESET_REQUEST (1 << 3)
+
+#define TIMEOUT_COUNT (1000000)
 
 void target_before_init_debug(void)
 {
@@ -58,6 +68,7 @@ void board_init(void)
 uint8_t target_unlock_sequence(void)
 {
     uint32_t val;
+    uint32_t timeoutCounter = 0;
 
     // read the device ID
     if (!swd_read_ap(MDM_IDR, &val)) {
@@ -69,41 +80,83 @@ uint8_t target_unlock_sequence(void)
         return 0;
     }
 
+    // Wait until flash is ready.
+    do {
+        if (!swd_read_ap(MDM_STATUS, &val)) {
+            return 0;
+        }
+
+        if (++timeoutCounter > TIMEOUT_COUNT) {
+            return 0;
+        }
+    } while (!(val & MDM_STATUS_FLASH_READY));
+
+    // Check if security is enabled.
     if (!swd_read_ap(MDM_STATUS, &val)) {
+        swd_set_target_reset(0);
         return 0;
     }
 
     // flash in secured mode
-    if (val & (1 << 2)) {
-        // hold the device in reset
-        swd_set_target_reset(1);
-
-        // write the mass-erase enable bit
-        if (!swd_write_ap(MDM_CTRL, 1)) {
+    if (val & MDM_STATUS_SYSTEM_SECURITY) {
+        // Make sure mass erase is enabled.
+        if (!(val & MDM_STATUS_MASS_ERASE_ENABLE)) {
             return 0;
         }
 
-        while (1) {
-            // wait until mass erase is started
-            if (!swd_read_ap(MDM_STATUS, &val)) {
-                return 0;
-            }
+        // hold the device in reset
+        swd_set_target_reset(1);
 
-            if (val & 1) {
-                break;
-            }
+        // Write the mass-erase enable and system reset request bits.
+        if (!swd_write_ap(MDM_CTRL, (MDM_CTRL_FLASH_MASS_ERASE_IN_PROGRESS | MDM_CTRL_SYSTEM_RESET_REQUEST))) {
+            swd_set_target_reset(0);
+            return 0;
         }
 
-        // mass erase in progress
-        while (1) {
-            // keep reading until procedure is complete
-            if (!swd_read_ap(MDM_CTRL, &val)) {
+        // Verify mass erase has started.
+        timeoutCounter = 0;
+        do {
+            // wait until mass erase is started
+            if (!swd_read_ap(MDM_STATUS, &val)) {
+                swd_set_target_reset(0);
                 return 0;
             }
 
-            if (val == 0) {
-                break;
+            if (++timeoutCounter > TIMEOUT_COUNT) {
+                swd_write_ap(MDM_CTRL, 0);
+                swd_set_target_reset(0);
+                return 0;
             }
+        } while (!(val & MDM_STATUS_FLASH_MASS_ERASE_ACKNOWLEDGE));
+
+        // Wait until mass erase completes.
+        timeoutCounter = 0;
+        do {
+            // keep reading until procedure is complete
+            if (!swd_read_ap(MDM_CTRL, &val)) {
+                swd_set_target_reset(0);
+                return 0;
+            }
+
+            if (++timeoutCounter > TIMEOUT_COUNT) {
+                swd_write_ap(MDM_CTRL, 0);
+                swd_set_target_reset(0);
+                return 0;
+            }
+        } while (val & MDM_CTRL_FLASH_MASS_ERASE_IN_PROGRESS);
+
+        // Confirm the mass erase was successful.
+        if (!swd_read_ap(MDM_STATUS, &val)) {
+            swd_set_target_reset(0);
+            return 0;
+        }
+
+        // Release the device from reset.
+        swd_write_ap(MDM_CTRL, 0);
+        swd_set_target_reset(0);
+
+        if (val & MDM_STATUS_SYSTEM_SECURITY) {
+            return 0;
         }
     }
 
@@ -121,3 +174,4 @@ uint8_t target_set_state(TARGET_RESET_STATE state)
 {
     return swd_set_target_state_hw(state);
 }
+
