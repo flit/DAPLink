@@ -28,11 +28,6 @@
 #include "DAP_config.h"
 #include "DAP.h"
 
-// Default NVIC and Core debug base addresses
-// TODO: Read these addresses from ROM.
-#define NVIC_Addr    (0xe000e000)
-#define DBG_Addr     (0xe000edf0)
-
 // AP CSW register, base value
 #define CSW_VALUE (CSW_RESERVED | CSW_MSTRDBG | CSW_HPROT | CSW_DBGSTAT | CSW_SADDRINC)
 
@@ -122,16 +117,16 @@ uint8_t swd_off(void)
     // Clear CSYSPWRUPREQ and CDBGPWRUPREQ if SWD had been enabled. This is to ensure we don't
     // leave the target's debug logic powered up.
     if (swd_enabled)  {
-			
+
         // Ensure CTRL/STAT register selected in DPBANKSEL
 			  if (!swd_write_dp(DP_SELECT, 0)) {
             return 0;
-        }			
+        }
         if (!swd_write_dp(DP_ABORT, 0x04)) {
             return 0;
         }
-			
-		// Power down. 
+
+		// Power down.
         if (!swd_write_dp(DP_CTRL_STAT, CDBGRSTREQ)) {
             return 0;
         }
@@ -418,7 +413,7 @@ static uint8_t swd_write_data(uint32_t address, uint32_t data)
 }
 
 // Read 32-bit word from target memory.
-static uint8_t swd_read_word(uint32_t addr, uint32_t *val)
+uint8_t swd_read_word(uint32_t addr, uint32_t *val)
 {
     if (!swd_write_ap(AP_CSW, CSW_VALUE | CSW_SIZE32)) {
         return 0;
@@ -432,7 +427,7 @@ static uint8_t swd_read_word(uint32_t addr, uint32_t *val)
 }
 
 // Write 32-bit word to target memory.
-static uint8_t swd_write_word(uint32_t addr, uint32_t val)
+uint8_t swd_write_word(uint32_t addr, uint32_t val)
 {
     if (!swd_write_ap(AP_CSW, CSW_VALUE | CSW_SIZE32)) {
         return 0;
