@@ -21,12 +21,26 @@
 
 #include "target_reset.h"
 #include "swd_host.h"
+#include "debug_cm.h"
 #include "info.h"
 
 #define MDM_STATUS  0x01000000
-#define MDM_CTRL    0x01000004     //
+#define MDM_CTRL    0x01000004
 #define MDM_IDR     0x010000fc     // read-only identification register
 #define MDM_ID      0x001c0020     // L series
+
+#define MDM_STATUS_FLASH_MASS_ERASE_ACKNOWLEDGE (1 << 0)
+#define MDM_STATUS_FLASH_READY (1 << 1)
+#define MDM_STATUS_SYSTEM_SECURITY (1 << 2)
+#define MDM_STATUS_MASS_ERASE_ENABLE (1 << 5)
+#define MDM_STATUS_CORE_HALTED (1 << 16)
+
+#define MDM_CTRL_FLASH_MASS_ERASE_IN_PROGRESS (1 << 0)
+#define MDM_CTRL_DEBUG_REQUEST (1 << 2)
+#define MDM_CTRL_SYSTEM_RESET_REQUEST (1 << 3)
+#define MDM_CTRL_CORE_HOLD_REQUEST (1 << 4)
+
+#define TIMEOUT_COUNT (1000000)
 
 void target_before_init_debug(void)
 {
@@ -39,6 +53,64 @@ void board_init(void)
 
 void prerun_target_config(void)
 {
+}
+
+uint8_t mdm_ap_status_check(uint32_t mask, uint32_t expected)
+{
+    uint32_t val;
+
+    if (!swd_read_ap(MDM_STATUS, &val)) {
+        return 0;
+    }
+
+    return (val & mask) == expected;
+}
+
+uint8_t mdm_ap_status_wait(uint32_t mask, uint32_t expected)
+{
+    uint32_t val;
+    uint32_t timeoutCounter = 0;
+    do {
+        if (!swd_read_ap(MDM_STATUS, &val)) {
+            return 0;
+        }
+
+        if (++timeoutCounter > TIMEOUT_COUNT) {
+            return 0;
+        }
+    } while ((val & mask) != expected);
+
+    return 1;
+}
+
+uint8_t target_mass_erase(void)
+{
+    // Make sure mass erase is enabled.
+    if (!mdm_ap_status_check(MDM_STATUS_MASS_ERASE_ENABLE, MDM_STATUS_MASS_ERASE_ENABLE)) {
+        return 0;
+    }
+
+    // Write the mass-erase enable bit.
+    if (!swd_write_ap(MDM_CTRL, MDM_CTRL_FLASH_MASS_ERASE_IN_PROGRESS)) {
+        return 0;
+    }
+
+    // Verify mass erase has started.
+    if (!mdm_ap_status_wait(MDM_STATUS_FLASH_MASS_ERASE_ACKNOWLEDGE, MDM_STATUS_FLASH_MASS_ERASE_ACKNOWLEDGE)) {
+        return 0;
+    }
+
+    // Wait until mass erase completes.
+    if (!mdm_ap_status_wait(MDM_CTRL_FLASH_MASS_ERASE_IN_PROGRESS, 0)) {
+        return 0;
+    }
+
+    // Confirm the mass erase was successful.
+    if (!mdm_ap_status_check(MDM_STATUS_SYSTEM_SECURITY, 0)) {
+        return 0;
+    }
+
+    return 1;
 }
 
 uint8_t target_unlock_sequence(void)
@@ -55,43 +127,30 @@ uint8_t target_unlock_sequence(void)
         return 0;
     }
 
-    if (!swd_read_ap(MDM_STATUS, &val)) {
+    // Assert reset to ensure we can gain control of the device.
+    swd_set_target_reset(1);
+
+    // Wait until flash is ready.
+    if (!mdm_ap_status_wait(MDM_STATUS_FLASH_READY, MDM_STATUS_FLASH_READY)) {
+        swd_set_target_reset(0);
         return 0;
     }
 
-    // flash in secured mode
-    if (val & (1 << 2)) {
-        // hold the device in reset
-        swd_set_target_reset(1);
+    // Check if security is enabled.
+    if (!swd_read_ap(MDM_STATUS, &val)) {
+        swd_set_target_reset(0);
+        return 0;
+    }
 
-        // write the mass-erase enable bit
-        if (!swd_write_ap(MDM_CTRL, 1)) {
+    // Perform mass erase if security is enabled.
+    if (val & MDM_STATUS_SYSTEM_SECURITY) {
+        if (!target_mass_erase()) {
+            swd_set_target_reset(0);
             return 0;
         }
-
-        while (1) {
-            // wait until mass erase is started
-            if (!swd_read_ap(MDM_STATUS, &val)) {
-                return 0;
-            }
-
-            if (val & 1) {
-                break;
-            }
-        }
-
-        // mass erase in progress
-        while (1) {
-            // keep reading until procedure is complete
-            if (!swd_read_ap(MDM_CTRL, &val)) {
-                return 0;
-            }
-
-            if (val == 0) {
-                break;
-            }
-        }
     }
+
+    swd_set_target_reset(0);
 
     return 1;
 }
@@ -138,5 +197,80 @@ uint8_t security_bits_set(uint32_t addr, uint8_t *data, uint32_t size)
 
 uint8_t target_set_state(TARGET_RESET_STATE state)
 {
-    return swd_set_target_state_hw(state);
+    uint32_t val;
+
+    switch (state) {
+        case RESET_PROGRAM:
+            swd_init();
+
+            // This will unlock the device if necessary.
+            if (!swd_init_debug()) {
+                return 0;
+            }
+
+            // Assert reset to ensure we can gain control of the device.
+            swd_set_target_reset(1);
+
+            // Wait until flash is ready.
+            if (!mdm_ap_status_wait(MDM_STATUS_FLASH_READY, MDM_STATUS_FLASH_READY)) {
+                swd_set_target_reset(0);
+                return 0;
+            }
+
+            // Prevent the target from resetting if it has invalid code
+            if (!swd_write_ap(MDM_CTRL, MDM_CTRL_DEBUG_REQUEST | MDM_CTRL_CORE_HOLD_REQUEST)) {
+                swd_set_target_reset(0);
+                return 0;
+            }
+
+            // Verify bits are set.
+            if (!swd_read_ap(MDM_CTRL, &val)) {
+                swd_set_target_reset(0);
+                return 0;
+            }
+            if (val & (MDM_CTRL_DEBUG_REQUEST | MDM_CTRL_CORE_HOLD_REQUEST) != (MDM_CTRL_DEBUG_REQUEST | MDM_CTRL_CORE_HOLD_REQUEST)) {
+                swd_set_target_reset(0);
+                return 0;
+            }
+
+            // Enable debug and halt the core (DHCSR <- 0xA05F0003)
+            if (!swd_write_word(DBG_HCSR, DBGKEY | C_DEBUGEN | C_HALT)) {
+                swd_set_target_reset(0);
+                return 0;
+            }
+
+            // Release reset.
+            swd_set_target_reset(0);
+
+            // Disable holding the core in reset, leave MDM-AP halt on.
+            if (!swd_write_ap(MDM_CTRL, MDM_CTRL_DEBUG_REQUEST)) {
+                return 0;
+            }
+
+            // Wait until core is halted.
+            if (!mdm_ap_status_wait(MDM_STATUS_CORE_HALTED, MDM_STATUS_CORE_HALTED)) {
+                swd_set_target_reset(0);
+                return 0;
+            }
+
+            // Release MDM halt once it has taken effect in the DHCSR
+            if (!swd_write_ap(MDM_CTRL, 0)) {
+                return 0;
+            }
+
+            // Verify core is still halted by reading the DHCSR.
+            if (!swd_read_word(DBG_HCSR, &val)) {
+                return 0;
+            }
+            if (!(val & S_HALT)) {
+                return 0;
+            }
+
+            break;
+
+        default:
+            return swd_set_target_state_hw(state);
+    }
+
+    return 1;
 }
