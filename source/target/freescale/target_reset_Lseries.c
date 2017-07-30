@@ -101,9 +101,17 @@ uint8_t target_mass_erase(void)
     }
 
     // Wait until mass erase completes.
-    if (!mdm_ap_status_wait(MDM_CTRL_FLASH_MASS_ERASE_IN_PROGRESS, 0)) {
-        return 0;
-    }
+    uint32_t val;
+    uint32_t timeoutCounter = 0;
+    do {
+        if (!swd_read_ap(MDM_CTRL, &val)) {
+            return 0;
+        }
+
+        if (++timeoutCounter > TIMEOUT_COUNT) {
+            return 0;
+        }
+    } while ((val & MDM_CTRL_FLASH_MASS_ERASE_IN_PROGRESS) != 0);
 
     // Confirm the mass erase was successful.
     if (!mdm_ap_status_check(MDM_STATUS_SYSTEM_SECURITY, 0)) {
@@ -200,9 +208,12 @@ uint8_t target_set_state(TARGET_RESET_STATE state)
     uint32_t val;
 
     switch (state) {
-        case RESET_PROGRAM:
-            swd_init();
+        case RESET_RUN:
+            // Disable debug before resetting target, to make sure the core is not held in debug halt.
+            swd_set_target_state_hw(NO_DEBUG);
+            return swd_set_target_state_hw(RESET_RUN);
 
+        case RESET_PROGRAM:
             // This will unlock the device if necessary.
             if (!swd_init_debug()) {
                 return 0;
