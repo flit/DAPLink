@@ -27,6 +27,7 @@
 #include "target_reset.h"
 #include "daplink.h"
 #include "hic_init.h"
+#include "fsl_clock.h"
 
 void gpio_init(void)
 {
@@ -55,6 +56,9 @@ void gpio_init(void)
             PORT_PCR_ODE_MASK;  /* Open-drain */
     PIN_nRESET_EN_GPIO->PSOR  = PIN_nRESET_EN;
     PIN_nRESET_EN_GPIO->PDDR |= PIN_nRESET_EN;
+    // Configure SWO UART RX.
+    PIN_SWO_RX_PORT->PCR[PIN_SWO_RX_BIT] = PORT_PCR_MUX(3); // UART1
+    PIN_SWO_RX_GPIO->PDDR &= ~(1 << PIN_SWO_RX_BIT); // Input
 
     // Enable pulldowns on power monitor control signals to reduce power consumption.
     PIN_CTRL0_PORT->PCR[PIN_CTRL0_BIT] = PORT_PCR_MUX(1) | PORT_PCR_PE_MASK | PORT_PCR_PS(0);
@@ -64,6 +68,23 @@ void gpio_init(void)
 
     // Enable pulldown on GPIO0_B to prevent it floating.
     PIN_GPIO0_B_PORT->PCR[PIN_GPIO0_B_BIT] = PORT_PCR_MUX(1) | PORT_PCR_PE_MASK | PORT_PCR_PS(0);
+}
+
+uint32_t UART1_GetFreq(void)
+{
+    return CLOCK_GetCoreSysClkFreq();
+}
+
+void UART1_InitPins(void)
+{
+    // RX pin inited in gpio_init();
+    // TX not used.
+}
+
+void UART1_DeinitPins(void)
+{
+    // No need to deinit the RX pin.
+    // TX not used.
 }
 
 void gpio_set_hid_led(gpio_led_state_t state)
