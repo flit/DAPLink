@@ -29,7 +29,9 @@
 \defgroup DAP_Config_Debug_gr CMSIS-DAP Debug Unit Information
 \ingroup DAP_ConfigIO_gr
 @{
-Provides definitions about:
+Provides definitions about the hardware and configuration of the Debug Unit.
+
+This information includes:
  - Definition of Cortex-M processor parameters used in CMSIS-DAP Debug Unit.
  - Debug Unit communication packet size.
  - Debug Access Port communication mode (JTAG or SWD).
@@ -45,10 +47,10 @@ Provides definitions about:
 /// Number of processor cycles for I/O Port write operations.
 /// This value is used to calculate the SWD/JTAG clock speed that is generated with I/O
 /// Port write operations in the Debug Unit by a Cortex-M MCU. Most Cortex-M processors
-/// requrie 2 processor cycles for a I/O Port Write operation.  If the Debug Unit uses
+/// require 2 processor cycles for a I/O Port Write operation.  If the Debug Unit uses
 /// a Cortex-M0+ processor with high-speed peripheral I/O only 1 processor cycle might be
-/// requrired.
-#define IO_PORT_WRITE_CYCLES    2               ///< I/O Cycles: 2=default, 1=Cortex-M0+ fast I/0
+/// required.
+#define IO_PORT_WRITE_CYCLES    2U              ///< I/O Cycles: 2=default, 1=Cortex-M0+ fast I/0
 
 /// Indicate that Serial Wire Debug (SWD) communication mode is available at the Debug Access Port.
 /// This information is returned by the command \ref DAP_Info as part of <b>Capabilities</b>.
@@ -80,8 +82,23 @@ Provides definitions about:
 /// This configuration settings is used to optimized the communication performance with the
 /// debugger and depends on the USB peripheral. For devices with limited RAM or USB buffer the
 /// setting can be reduced (valid range is 1 .. 255). Change setting to 4 for High-Speed USB.
-#define DAP_PACKET_COUNT        5              ///< Buffers: 64 = Full-Speed, 4 = High-Speed.
+#define DAP_PACKET_COUNT        4U             ///< Buffers: 64 = Full-Speed, 4 = High-Speed.
 
+/// Indicate that UART Serial Wire Output (SWO) trace is available.
+/// This information is returned by the command \ref DAP_Info as part of <b>Capabilities</b>.
+#define SWO_UART                1               ///< SWO UART:  1 = available, 0 = not available
+
+/// Maximum SWO UART Baudrate
+#define SWO_UART_MAX_BAUDRATE   10000000U       ///< SWO UART Maximum Baudrate in Hz
+
+/// Indicate that Manchester Serial Wire Output (SWO) trace is available.
+/// This information is returned by the command \ref DAP_Info as part of <b>Capabilities</b>.
+#define SWO_MANCHESTER          0               ///< SWO Manchester:  1 = available, 0 = not available
+
+/// SWO Trace Buffer Size.
+#define SWO_BUFFER_SIZE         4096U           ///< SWO Trace Buffer Size in bytes (must be 2^n)
+
+#define SWO_USART_PORT 1 ///< UART1 is used for the SWO UART.
 
 /// Debug Unit is connected to fixed Target Device.
 /// The Debug Unit may be part of an evaluation board and always connected to a fixed
