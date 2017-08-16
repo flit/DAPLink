@@ -41,6 +41,7 @@ void gpio_init(void)
 #endif
     // enable clock to ports
     SIM->SCGC5 |= SIM_SCGC5_PORTA_MASK | SIM_SCGC5_PORTB_MASK | SIM_SCGC5_PORTC_MASK | SIM_SCGC5_PORTD_MASK | SIM_SCGC5_PORTE_MASK;
+    SIM->SCGC6 |= SIM_SCGC6_DMAMUX_MASK;
     // configure pin as GPIO
     LED_CONNECTED_PORT->PCR[LED_CONNECTED_BIT] = PORT_PCR_MUX(1);
     // led off - enable output
