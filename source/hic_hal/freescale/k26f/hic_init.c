@@ -63,6 +63,9 @@ void LVD_LVW_IRQHandler(void)
 //! - Disable USB current limiter so the voltage doesn't drop as we enable high speed clocks.
 void hic_init(void)
 {
+    CLOCK_SetXtal0Freq(16000000U); // 16 MHz crystal
+    CLOCK_SetXtal32Freq(0);
+
     // Disable the MPU if it's enabled.
     if (SIM->SCGC7 & SIM_SCGC7_MPU_MASK)
     {
