@@ -14,7 +14,7 @@
 
 
 #define RTE_USART1 1
-#define RTE_USART1_DMA_EN 1
+#define RTE_USART1_DMA_EN 0
 
 
 #define RTE_USART1_DMA_TX_DMA_BASE (DMA0)
