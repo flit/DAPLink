@@ -127,3 +127,7 @@ uint8_t gpio_get_reset_btn_fwrd(void)
 void gpio_set_board_power(bool powerEnabled)
 {
 }
+
+void gpio_set_board_power(bool powerEnabled)
+{
+}
