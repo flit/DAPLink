@@ -1,6 +1,6 @@
 /**
  * @file    gpio.h
- * @brief   
+ * @brief
  *
  * DAPLink Interface Firmware
  * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
@@ -35,6 +35,7 @@ typedef enum led_state {
 } gpio_led_state_t;
 
 void gpio_init(void);
+void gpio_handle_usb_connected(bool isConnected);
 void gpio_set_hid_led(gpio_led_state_t state);
 void gpio_set_cdc_led(gpio_led_state_t state);
 void gpio_set_msc_led(gpio_led_state_t state);

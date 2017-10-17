@@ -21,7 +21,7 @@
 
 #include "RTL.h"
 #include "util.h"
-#include "IO_Config.h" // NVIC_SystemReset
+#include "cortex_m.h"
 
 /*----------------------------------------------------------------------------
  *      RTX User configuration part BEGIN
@@ -92,7 +92,7 @@
 #elif defined(INTERFACE_K22F)
 #define OS_CLOCK    120000000
 #elif defined(INTERFACE_LPC4322)
-#define OS_CLOCK    204000000
+#define OS_CLOCK    96000000
 #endif
 #endif
 
@@ -210,7 +210,7 @@ void os_error(U32 err_code)
             break;
     }
 
-    NVIC_SystemReset();
+    SystemReset();
 
     for (;;); // Wait for reset
 }

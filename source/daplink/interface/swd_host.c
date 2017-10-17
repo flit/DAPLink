@@ -606,12 +606,6 @@ static uint8_t swd_write_debug_state(DEBUG_STATE *state)
         return 0;
     }
 
-    if (!swd_write_memory(target_device.flash_algo->algo_start,
-                          (uint8_t *)target_device.flash_algo->algo_blob,
-                          target_device.flash_algo->algo_size)) {
-        return 0;
-    }
-
     if (!swd_write_word(DBG_HCSR, DBGKEY | C_DEBUGEN)) {
         return 0;
     }
@@ -803,6 +797,8 @@ static uint8_t JTAG2SWD()
 uint8_t swd_init_debug(void)
 {
     uint32_t tmp = 0;
+    int i = 0;
+    int timeout = 100;
     // init dap state with fake values
     dap_state.select = 0xffffffff;
     dap_state.csw = 0xffffffff;
@@ -830,11 +826,19 @@ uint8_t swd_init_debug(void)
         return 0;
     }
 
-    do {
+    for (i = 0; i < timeout; i++) {
         if (!swd_read_dp(DP_CTRL_STAT, &tmp)) {
             return 0;
         }
-    } while ((tmp & (CDBGPWRUPACK | CSYSPWRUPACK)) != (CDBGPWRUPACK | CSYSPWRUPACK));
+        if ((tmp & (CDBGPWRUPACK | CSYSPWRUPACK)) == (CDBGPWRUPACK | CSYSPWRUPACK)) {
+            // Break from loop if powerup is complete
+            break;
+        }
+    }
+    if (i == timeout) {
+        // Unable to powerup DP
+        return 0;
+    }
 
     if (!swd_write_dp(DP_CTRL_STAT, CSYSPWRUPREQ | CDBGPWRUPREQ | TRNNORMAL | MASKLANE)) {
         return 0;

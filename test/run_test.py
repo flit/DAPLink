@@ -67,6 +67,7 @@ from enum import Enum
 from hid_test import test_hid
 from serial_test import test_serial
 from msd_test import test_mass_storage
+from usb_test import test_usb
 from daplink_board import get_all_attached_daplink_boards
 from project_generator.generate import Generator
 from test_info import TestInfo
@@ -91,6 +92,7 @@ def test_endpoints(workspace, parent_test):
     test_hid(workspace, test_info)
     test_serial(workspace, test_info)
     test_mass_storage(workspace, test_info)
+    test_usb(workspace, test_info)
 
 
 class TestConfiguration(object):
@@ -221,14 +223,14 @@ class TestManager(object):
                            test_configuration.bl_firmware)
             test_info.info("Target: %s" % test_configuration.target)
 
-            if self._load_if:
-                if_path = test_configuration.if_firmware.hex_path
-                board.load_interface(if_path, test_info)
-
             valid_bl = test_configuration.bl_firmware is not None
             if self._load_bl and valid_bl:
                 bl_path = test_configuration.bl_firmware.hex_path
                 board.load_bootloader(bl_path, test_info)
+
+            if self._load_if:
+                if_path = test_configuration.if_firmware.hex_path
+                board.load_interface(if_path, test_info)
 
             board.set_check_fs_on_remount(True)
 

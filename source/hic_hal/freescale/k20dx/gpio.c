@@ -1,6 +1,6 @@
 /**
  * @file    gpio.c
- * @brief   
+ * @brief
  *
  * DAPLink Interface Firmware
  * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
@@ -57,24 +57,36 @@ void gpio_init(void)
     PIN_nRESET_GPIO->PDDR &= ~PIN_nRESET;
     PIN_nRESET_PORT->PCR[PIN_nRESET_BIT] = PORT_PCR_MUX(1);
 
-    // Keep powered off in bootloader mode
-    // to prevent the target from effecting the state
-    // of the reset line / reset button
     if (!daplink_is_bootloader()) {
         // configure pin as GPIO
         PIN_POWER_EN_PORT->PCR[PIN_POWER_EN_BIT] = PORT_PCR_MUX(1);
-        // force always on logic 1
-        PIN_POWER_EN_GPIO->PDOR |= 1UL << PIN_POWER_EN_BIT;
-        PIN_POWER_EN_GPIO->PDDR |= 1UL << PIN_POWER_EN_BIT;
+        // set output to 0
+        PIN_POWER_EN_GPIO->PCOR = PIN_POWER_EN;
+        // switch gpio to output
+        PIN_POWER_EN_GPIO->PDDR |= PIN_POWER_EN;
     }
+}
 
-    // Let the voltage rails stabilize.  This is especailly important
-    // during software resets, since the target's 3.3v rail can take
-    // 20-50ms to drain.  During this time the target could be driving
-    // the reset pin low, causing the bootloader to think the reset
-    // button is pressed.
-    // Note: With optimization set to -O2 the value 1000000 delays for ~85ms
-    busy_wait(1000000);
+void gpio_handle_usb_connected(bool isConnected)
+{
+    if (!daplink_is_bootloader()) {
+        if (isConnected) {
+            // enable power switch
+            PIN_POWER_EN_GPIO->PSOR = PIN_POWER_EN;
+
+            // Let the voltage rails stabilize.  This is especailly important
+            // during software resets, since the target's 3.3v rail can take
+            // 20-50ms to drain.  During this time the target could be driving
+            // the reset pin low, causing the bootloader to think the reset
+            // button is pressed.
+            // Note: With optimization set to -O2 the value 1000000 delays for ~85ms
+            busy_wait(1000000);
+        }
+        else {
+            // disable power switch
+            PIN_POWER_EN_GPIO->PCOR = PIN_POWER_EN;
+        }
+    }
 }
 
 void gpio_set_hid_led(gpio_led_state_t state)

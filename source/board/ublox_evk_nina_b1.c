@@ -1,6 +1,6 @@
 /**
- * @file    flash_hal_stub.c
- * @brief   
+ * @file    ublox_evk_nina_b1.c
+ * @brief   board ID for the UBLOX_EVK_NINA_B1
  *
  * DAPLink Interface Firmware
  * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
@@ -18,30 +18,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+ 
+#include "sam3u2c.h"
+#include "target_config.h"
 
-#include "flash_hal.h"
-
-uint32_t Init(uint32_t adr, uint32_t clk, uint32_t fnc)
-{
-    return (1); // IAP not supported
-}
-
-uint32_t UnInit(uint32_t fnc)
-{
-    return (1); // IAP not supported
-}
-
-uint32_t EraseChip(void)
-{
-    return (1); // IAP not supported
-}
-
-uint32_t EraseSector(uint32_t adr)
-{
-    return (1); // IAP not supported
-}
-
-uint32_t ProgramPage(uint32_t adr, uint32_t sz, uint32_t *buf)
-{
-    return (1); // IAP not supported
-}
+const char *board_id = "1237";
