@@ -129,25 +129,3 @@ void hic_enable_usb_clocks(void)
 
     SystemCoreClockUpdate();
 }
-
-void hic_power_target(void)
-{
-    // Keep powered off in bootloader mode
-    // to prevent the target from effecting the state
-    // of the reset line / reset button
-    if (!daplink_is_bootloader()) {
-        // configure pin as GPIO
-        PIN_POWER_EN_PORT->PCR[PIN_POWER_EN_BIT] = PORT_PCR_MUX(1);
-        // force always on logic 1
-        PIN_POWER_EN_GPIO->PSOR = 1UL << PIN_POWER_EN_BIT;
-        PIN_POWER_EN_GPIO->PDDR |= 1UL << PIN_POWER_EN_BIT;
-
-        // Let the voltage rails stabilize.  This is especailly important
-        // during software resets, since the target's 3.3v rail can take
-        // 20-50ms to drain.  During this time the target could be driving
-        // the reset pin low, causing the bootloader to think the reset
-        // button is pressed.
-        // Note: With optimization set to -O2 the value 5115 delays for ~1ms @ 20.9Mhz core
-        busy_wait(5115 * 50);
-    }
-}

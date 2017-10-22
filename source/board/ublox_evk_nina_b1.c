@@ -1,6 +1,6 @@
 /**
- * @file    target.c
- * @brief   Target information for the k24f
+ * @file    ublox_evk_nina_b1.c
+ * @brief   board ID for the UBLOX_EVK_NINA_B1
  *
  * DAPLink Interface Firmware
  * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
@@ -18,19 +18,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+ 
+#include "sam3u2c.h"
 #include "target_config.h"
 
-// The file flash_blob.c must only be included in target.c
-#include "flash_blob.c"
-
-// target information
-target_cfg_t target_device = {
-    .sector_size    = 4096,
-    .sector_cnt     = (KB(256) / 4096),
-    .flash_start    = 0,
-    .flash_end      = KB(256),
-    .ram_start      = 0x1FFF0000,
-    .ram_end        = 0x20030000,
-    .flash_algo     = (program_target_t *) &flash,
-};
+const char *board_id = "1237";

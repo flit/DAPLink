@@ -1,6 +1,6 @@
 /**
- * @file    flash_hal_stub.c
- * @brief   
+ * @file    frdmkw24d.c
+ * @brief   board ID for the NXP FRDM-KW24D board
  *
  * DAPLink Interface Firmware
  * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
@@ -19,29 +19,19 @@
  * limitations under the License.
  */
 
-#include "flash_hal.h"
+#include "virtual_fs.h"
 
-uint32_t Init(uint32_t adr, uint32_t clk, uint32_t fnc)
-{
-    return (1); // IAP not supported
-}
+const char *board_id = "0250";
 
-uint32_t UnInit(uint32_t fnc)
-{
-    return (1); // IAP not supported
-}
+// Override default behavior
+//
+// URL_NAME and DRIVE_NAME must be 11 characters excluding
+// the null terminated character
+// Note - 4 byte alignemnt required as workaround for ARMCC compiler bug with weak references
+__attribute__((aligned(4)))
+const vfs_filename_t daplink_url_name =       "PRODINFOHTM";
+__attribute__((aligned(4)))
+const vfs_filename_t daplink_drive_name =     "FRDM-KW24D";
+__attribute__((aligned(4)))
+const char *const daplink_target_url = "http://www.nxp.com/frdm-kw24d";
 
-uint32_t EraseChip(void)
-{
-    return (1); // IAP not supported
-}
-
-uint32_t EraseSector(uint32_t adr)
-{
-    return (1); // IAP not supported
-}
-
-uint32_t ProgramPage(uint32_t adr, uint32_t sz, uint32_t *buf)
-{
-    return (1); // IAP not supported
-}

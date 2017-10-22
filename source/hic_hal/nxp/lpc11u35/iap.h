@@ -1,9 +1,9 @@
 /**
- * @file    frdmkw24f.c
- * @brief   board ID for the NXP FRDM-KW24F board
+ * @file    iap.h
+ * @brief   
  *
  * DAPLink Interface Firmware
- * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
+ * Copyright (c) 2017-2017, ARM Limited, All Rights Reserved
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -19,5 +19,26 @@
  * limitations under the License.
  */
 
-const char *board_id = "0250";
 
+#ifndef IAP_H
+#define IAP_H
+
+#include<stdint.h>
+
+#define CMD_SUCCESS 0
+
+typedef struct {
+    uint32_t cmd;
+    uint32_t par[4];
+    uint32_t stat;
+    uint32_t res[4];
+} iap_operation_t;
+
+extern iap_operation_t iap_op;
+
+void iap_lock(void);
+void iap_unlock(void);
+void iap_call(iap_operation_t* operation);
+void iap_reinvoke(void);
+
+#endif
