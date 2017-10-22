@@ -124,6 +124,6 @@ void target_forward_reset(bool assert_reset)
     // Do nothing - reset is forwarded in gpio_get_sw_reset
 }
 
-void gpio_handle_usb_connected(bool isConnected)
+void gpio_set_board_power(bool powerEnabled)
 {
 }

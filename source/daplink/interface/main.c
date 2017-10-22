@@ -57,13 +57,17 @@
 #define FLAGS_MAIN_CDC_EVENT    (1 << 11)
 // Used by msd when flashing a new binary
 #define FLAGS_LED_BLINK_30MS    (1 << 6)
+
 // Timing constants (in 90mS ticks)
-// USB busy time
+// USB busy time (~3 sec)
 #define USB_BUSY_TIME           (33)
-// Delay before a USB device connect may occur
+// Delay before a USB device connect may occur (~1 sec)
 #define USB_CONNECT_DELAY       (11)
+// Timeout for USB being configured (~2 sec)
+#define USB_CONFIGURE_TIMEOUT   (22)
 // Delay before target may be taken out of reset or reprogrammed after startup
 #define STARTUP_DELAY           (1)
+
 // Decrement to zero
 #define DECZERO(x)              (x ? --x : 0)
 
@@ -209,6 +213,7 @@ __task void main_task(void)
     gpio_led_state_t msc_led_value = GPIO_LED_OFF;
     // USB
     uint32_t usb_state_count = USB_BUSY_TIME;
+    uint32_t usb_no_config_count = USB_CONFIGURE_TIMEOUT;
     // thread running after usb connected started
     uint8_t thread_started = 0;
     // button state
@@ -270,8 +275,8 @@ __task void main_task(void)
         if (flags & FLAGS_MAIN_POWERDOWN) {
             // Disable debug
             target_set_state(NO_DEBUG);
-            // Let HIC know that USB is being disconnected.
-            gpio_handle_usb_connected(false);
+            // Disable board power before USB is disconnected.
+            gpio_set_board_power(false);
             // Disconnect USB
             usbd_connect(0);
             // Turn off LED
@@ -304,8 +309,8 @@ __task void main_task(void)
             switch (usb_state) {
                 case USB_DISCONNECTING:
                     usb_state = USB_DISCONNECTED;
-                    // Let HIC know that USB is being disconnected.
-                    gpio_handle_usb_connected(false);
+                    // Disable board power before USB is disconnected.
+                    gpio_set_board_power(false);
                     usbd_connect(0);
                     break;
 
@@ -314,6 +319,8 @@ __task void main_task(void)
                     if (DECZERO(usb_state_count) == 0) {
                         usbd_connect(1);
                         usb_state = USB_CHECK_CONNECTED;
+                        // Reset connect timeout
+                        usb_no_config_count = USB_CONFIGURE_TIMEOUT;
                     }
 
                     break;
@@ -325,11 +332,16 @@ __task void main_task(void)
                             thread_started = 1;
                         }
 
-                        // Let the HIC do anything it needs to once USB is configured, such as
-                        // enable power to the target now that high power has been negotiated.
-                        gpio_handle_usb_connected(true);
+                        // Let the HIC enable power to the target now that high power has been negotiated.
+                        gpio_set_board_power(true);
 
                         usb_state = USB_CONNECTED;
+                    }
+                    else if (DECZERO(usb_no_config_count) == 0) {
+                        // USB configuration timed out, which most likely indicates that the HIC is
+                        // powered by a USB wall wart or similar power source. Go ahead and enable
+                        // board power.
+                        gpio_set_board_power(true);
                     }
 
                     break;

@@ -35,7 +35,7 @@ typedef enum led_state {
 } gpio_led_state_t;
 
 void gpio_init(void);
-void gpio_handle_usb_connected(bool isConnected);
+void gpio_set_board_power(bool powerEnabled);
 void gpio_set_hid_led(gpio_led_state_t state);
 void gpio_set_cdc_led(gpio_led_state_t state);
 void gpio_set_msc_led(gpio_led_state_t state);

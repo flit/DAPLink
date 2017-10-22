@@ -67,10 +67,10 @@ void gpio_init(void)
     }
 }
 
-void gpio_handle_usb_connected(bool isConnected)
+void gpio_set_board_power(bool powerEnabled)
 {
     if (!daplink_is_bootloader()) {
-        if (isConnected) {
+        if (powerEnabled) {
             // enable power switch
             PIN_POWER_EN_GPIO->PSOR = PIN_POWER_EN;
 
