@@ -129,8 +129,28 @@ static uint8_t DAP_Info(uint8_t id, uint8_t *info) {
                 ((DAP_JTAG != 0)       ? (1U << 1) : 0U) |
                 ((SWO_UART != 0)       ? (1U << 2) : 0U) |
                 ((SWO_MANCHESTER != 0) ? (1U << 3) : 0U) |
-                /* Atomic Commands  */   (1U << 4);
-      length = 1U;
+                /* Atomic Commands  */   (1U << 4) |
+                ((TEST_DOMAIN_TIMER_FREQ != 0) ? (1U << 6) : 0U);
+      info[1] = ((TRACE_DATA_BLOCK_COUNT != 0) ? (1U << 0) : 0U);
+      length = 2U;
+      break;
+    case DAP_ID_TEST_DOMAIN_TIMER:
+#if (TEST_DOMAIN_TIMER_FREQ != 0)
+      info[0] = (uint8_t)(TEST_DOMAIN_TIMER_FREQ >>  0);
+      info[1] = (uint8_t)(TEST_DOMAIN_TIMER_FREQ >>  8);
+      info[2] = (uint8_t)(TEST_DOMAIN_TIMER_FREQ >> 16);
+      info[3] = (uint8_t)(TEST_DOMAIN_TIMER_FREQ >> 24);
+      length = 4U;
+#endif
+      break;
+    case DAP_ID_TRACE_DATA_MANAGEMENT:
+#if (TRACE_DATA_BLOCK_COUNT != 0)
+      info[0] = (uint8_t)(TRACE_DATA_BLOCK_COUNT >>  0);
+      info[1] = (uint8_t)(TRACE_DATA_BLOCK_COUNT >>  8);
+      info[2] = (uint8_t)(TRACE_DATA_BLOCK_SIZE >> 0);
+      info[3] = (uint8_t)(TRACE_DATA_BLOCK_SIZE >> 8);
+      length = 4U;
+#endif
       break;
     case DAP_ID_SWO_BUFFER_SIZE:
 #if ((SWO_UART != 0) || (SWO_MANCHESTER != 0))
@@ -267,7 +287,7 @@ static uint32_t DAP_Connect(const uint8_t *request, uint8_t *response) {
   } else {
     port = *request;
   }
-  
+
   switch (port) {
 #if (DAP_SWD != 0)
     case DAP_PORT_SWD:
@@ -325,9 +345,9 @@ static uint32_t DAP_SWJ_Pins(const uint8_t *request, uint8_t *response) {
   uint32_t value;
   uint32_t select;
   uint32_t wait;
-  
+
   value  =  *(request+0);
-  select =  *(request+1); 
+  select =  *(request+1);
   wait   = (*(request+2) <<  0) |
            (*(request+3) <<  8) |
            (*(request+4) << 16) |
@@ -479,7 +499,7 @@ static uint32_t DAP_SWD_Configure(const uint8_t *request, uint8_t *response) {
   value = *request;
   DAP_Data.swd_conf.turnaround = (value & 0x03U) + 1U;
   DAP_Data.swd_conf.data_phase = (value & 0x04U) ? 1U : 0U;
-  
+
   *response = DAP_OK;
 #else
   *response = DAP_ERROR;
@@ -606,7 +626,7 @@ static uint32_t DAP_JTAG_IDCode(const uint8_t *request, uint8_t *response) {
 id_error:
 #endif
   *response = DAP_ERROR;
-  return ((1U << 16) | 1U); 
+  return ((1U << 16) | 1U);
 }
 
 
@@ -622,7 +642,7 @@ static uint32_t DAP_TransferConfigure(const uint8_t *request, uint8_t *response)
   DAP_Data.transfer.match_retry = *(request+3) | (*(request+4) << 8);
 
   *response = DAP_OK;
-  return ((5U << 16) | 1U); 
+  return ((5U << 16) | 1U);
 }
 
 
@@ -1382,7 +1402,7 @@ static uint32_t DAP_JTAG_WriteAbort(const uint8_t *request, uint8_t *response) {
   DAP_Data.jtag_dev.index = *request;
   if (DAP_Data.jtag_dev.index >= DAP_Data.jtag_dev.count) {
     *response = DAP_ERROR;
-    return (1U); 
+    return (1U);
   }
 
   // Select JTAG chain
@@ -1398,7 +1418,7 @@ static uint32_t DAP_JTAG_WriteAbort(const uint8_t *request, uint8_t *response) {
   JTAG_WriteAbort(data);
 
   *response = DAP_OK;
-  return (1U); 
+  return (1U);
 }
 #endif
 
@@ -1540,6 +1560,21 @@ uint32_t DAP_ProcessCommand(const uint8_t *request, uint8_t *response) {
       break;
 #endif
 
+#if (TRACE_DATA_BLOCK_COUNT != 0)
+    case ID_DAP_TI_Info:
+      num = TI_Info(request, response);
+      break;
+    case ID_DAP_TI_Value:
+      num = TI_Value(request, response);
+      break;
+    case ID_DAP_TI_Capture:
+      num = TI_Capture(request, response);
+      break;
+    case ID_DAP_TI_TransferBlock:
+      num = TI_TransferBlock(request, response);
+      break;
+#endif
+
     default:
       *(response-1) = ID_DAP_Invalid;
       return ((1U << 16) | 1U);
@@ -1566,7 +1601,7 @@ uint32_t DAP_ExecuteCommand(const uint8_t *request, uint8_t *response) {
       n = DAP_ProcessCommand(request, response);
       num += n;
       request  += (uint16_t)(n >> 16);
-      response += (uint16_t) n;  
+      response += (uint16_t) n;
     }
     return (num);
   }

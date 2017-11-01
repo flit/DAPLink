@@ -1,6 +1,6 @@
 /**
  * @file    DAP_config.h
- * @brief   
+ * @brief
  *
  * DAPLink Interface Firmware
  * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
@@ -106,6 +106,15 @@ Provides definitions about:
 
 /// SWO Trace Buffer Size.
 #define SWO_BUFFER_SIZE         4096U           ///< SWO Trace Buffer Size in bytes (must be 2^n)
+
+/// Test domain timer frequency in Hertz.
+#define TEST_DOMAIN_TIMER_FREQ  (0)             ///< 1 MHz, 0 for not available
+
+/// Trace data management block count.
+#define TRACE_DATA_BLOCK_COUNT  (0)             ///< 0 for not available
+
+/// Trace data management block size in bytes.
+#define TRACE_DATA_BLOCK_SIZE   (0)
 
 /// Debug Unit is connected to fixed Target Device.
 /// The Debug Unit may be part of an evaluation board and always connected to a fixed

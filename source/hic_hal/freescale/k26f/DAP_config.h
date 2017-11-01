@@ -100,6 +100,15 @@ This information includes:
 
 #define SWO_USART_PORT 1 ///< UART1 is used for the SWO UART.
 
+/// Test domain timer frequency in Hertz.
+#define TEST_DOMAIN_TIMER_FREQ  (1000000U)      ///< 1 MHz, 0 for not available
+
+/// Trace data management block count.
+#define TRACE_DATA_BLOCK_COUNT  (4U)            ///< 0 for not available
+
+/// Trace data management block size in bytes.
+#define TRACE_DATA_BLOCK_SIZE   (1024U)
+
 /// Debug Unit is connected to fixed Target Device.
 /// The Debug Unit may be part of an evaluation board and always connected to a fixed
 /// known device.  In this case a Device Vendor and Device Name string is stored which
