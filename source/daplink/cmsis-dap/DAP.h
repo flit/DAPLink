@@ -60,6 +60,11 @@ extern "C" {
 #define ID_DAP_SWO_Control              0x1AU
 #define ID_DAP_SWO_Status               0x1BU
 #define ID_DAP_SWO_Data                 0x1CU
+#define ID_DAP_TI_Info                  0x1DU
+#define ID_DAP_TI_Value                 0x1EU
+#define ID_DAP_TI_Capture               0x1FU
+#define ID_DAP_TI_TransferBlock         0x20U
+#define ID_DAP_SWD_Sequence             0x21U
 
 #define ID_DAP_QueueCommands            0x7EU
 #define ID_DAP_ExecuteCommands          0x7FU
@@ -112,6 +117,8 @@ extern "C" {
 #define DAP_ID_DEVICE_VENDOR            5U
 #define DAP_ID_DEVICE_NAME              6U
 #define DAP_ID_CAPABILITIES             0xF0U
+#define DAP_ID_TEST_DOMAIN_TIMER        0xF1U
+#define DAP_ID_TRACE_DATA_MANAGEMENT    0xF2U
 #define DAP_ID_SWO_BUFFER_SIZE          0xFDU
 #define DAP_ID_PACKET_COUNT             0xFEU
 #define DAP_ID_PACKET_SIZE              0xFFU
@@ -159,6 +166,15 @@ extern "C" {
 #define DAP_SWO_CAPTURE_PAUSED          (1U<<1)
 #define DAP_SWO_STREAM_ERROR            (1U<<6)
 #define DAP_SWO_BUFFER_OVERRUN          (1U<<7)
+
+// DAP TI Info
+#define DAP_TI_GET_GENERAL              0U
+#define DAP_TI_GET_CHANNEL_PARAMS       1U
+#define DAP_TI_GET_CHANNEL_FREQS        2U
+
+// DAP TI Capture
+#define DAP_TI_START_RECORDING          0U
+#define DAP_TI_STOP_RECORDING           1U
 
 
 // Debug Port Register Addresses
@@ -237,6 +253,11 @@ extern uint32_t SWO_Baudrate    (const uint8_t *request, uint8_t *response);
 extern uint32_t SWO_Control     (const uint8_t *request, uint8_t *response);
 extern uint32_t SWO_Status                              (uint8_t *response);
 extern uint32_t SWO_Data        (const uint8_t *request, uint8_t *response);
+
+extern uint32_t TI_Info         (const uint8_t *request, uint8_t *response);
+extern uint32_t TI_Value        (const uint8_t *request, uint8_t *response);
+extern uint32_t TI_Capture      (const uint8_t *request, uint8_t *response);
+extern uint32_t TI_TransferBlock(const uint8_t *request, uint8_t *response);
 
 extern uint32_t DAP_ProcessVendorCommand (const uint8_t *request, uint8_t *response);
 extern uint32_t DAP_ProcessCommand       (const uint8_t *request, uint8_t *response);
