@@ -24,27 +24,40 @@
 
 #include "IO_Config.h"
 
+//! @brief Channel descriptor.
+typedef struct profile_channel_params {
+    uint8_t channelNumber;  //!< Channel number, 0-n.
+    char idString[9];       //!< Informative name of this channel.
+    char unitString[9];     //!< Units of this channel.
+    uint8_t dataSize;       //!< Channel data size in bytes (1, 2, or 4).
+    uint8_t dataBits;       //!< Channel data size in bits. Must be less than or equal to dataSize * 8.
+    uint8_t rangeCount;     //!< Number of valid entries in the ranges field.
+    uint8_t freqCount;      //!< Number of valid entries in the freqs field.
+    struct {
+        float minVal;
+        float maxVal;
+    } ranges[4];            //!< Minimum and maximum values for each range.
+    uint32_t freqs[16];     //!< Frequencies in Hertz supported by this channel.
+} profile_channel_params_t;
+
+//! @brief Profiling control commands.
+typedef enum _profile_control_commands {
+    kProfileStartChannels = 1,
+    kProfileStopChannels = 2,
+    kProfileSetFrequency = 3,
+} profile_control_command_t;
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct profile_channel_params {
-    uint8_t channelNumber;
-    char idString[9];
-    char unitString[9];
-    uint8_t dataSize;
-    uint8_t dataBits;
-    uint8_t rangeCount;
-    uint8_t freqCount;
-    struct {
-        float minVal;
-        float maxVal;
-    } ranges[4];
-    uint32_t freqs[16];
-} profile_channel_params_t;
-
 uint32_t hic_profile_get_channels(void);
 const profile_channel_params_t * hic_profile_get_channel_info(uint32_t channel);
+
+uint32_t hic_profile_control(profile_control_command_t command, uint32_t value);
+
+uint32_t hic_profile_read_data(uint32_t maxLength, void * data);
 
 #ifdef __cplusplus
 }

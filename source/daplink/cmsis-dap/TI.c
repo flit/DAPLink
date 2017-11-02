@@ -117,9 +117,26 @@ uint32_t TI_Value (const uint8_t *request, uint8_t *response) {
 //   return:   number of bytes in response (lower 16 bits)
 //             number of bytes in request (upper 16 bits)
 uint32_t TI_Capture (const uint8_t *request, uint8_t *response) {
-  *response = DAP_OK;
+  uint16_t channelMask = *(uint16_t *)&request[0];
+  uint16_t channelDiffMask = *(uint16_t *)&request[2];
+  uint8_t action = request[3];
+  uint8_t freqSelect = request[4];
 
-  return ((0U << 16) | 1U);
+  switch (action) {
+    case DAP_TI_START_RECORDING:
+      hic_profile_control(kProfileSetFrequency, freqSelect);
+      channelMask = hic_profile_control(kProfileStartChannels, channelMask);
+      break;
+    case DAP_TI_STOP_RECORDING:
+      channelMask = hic_profile_control(kProfileStopChannels, channelMask);
+      break;
+    default:
+      channelMask = 0U;
+      break;
+  }
+  *(uint16_t *)response = channelMask;
+
+  return ((6U << 16) | 2U);
 }
 
 // Process TI Info command and prepare response
@@ -128,9 +145,11 @@ uint32_t TI_Capture (const uint8_t *request, uint8_t *response) {
 //   return:   number of bytes in response (lower 16 bits)
 //             number of bytes in request (upper 16 bits)
 uint32_t TI_TransferBlock (const uint8_t *request, uint8_t *response) {
-  *response = DAP_OK;
+  uint8_t dataRequest = request[0];
 
-  return ((0U << 16) | 1U);
+  uint32_t actualLength = hic_profile_read_data(1024, response);
+
+  return ((1U << 16) | actualLength);
 }
 
 #endif // (TRACE_DATA_BLOCK_COUNT != 0)
