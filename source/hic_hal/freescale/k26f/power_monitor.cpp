@@ -51,6 +51,10 @@
 #define CAL_AVERAGE_WEIGHT                                          (1000U)
 // #endif
 
+enum {
+    kAdcMaxValue = 65535,
+};
+
 //! @brief Profiling thread event masks.
 enum {
     kProfileStartFlag = 1,
@@ -66,6 +70,67 @@ enum {
 //! @brief Value of the DWT_PCSR register returned when the CPU is halted.
 const uint32_t kHaltedPCSR = 0xffffffffu;
 
+typedef enum gain_range {
+    kLowRange,
+    kHighRange,
+} gain_range_t;
+
+/*!
+ * @brief GPIO template.
+ */
+template <uint32_t gpioBase, uint32_t pinMask>
+class OutputPin
+{
+public:
+    OutputPin()
+    {
+        ((GPIO_Type *)gpioBase)->PDDR |= pinMask;
+    }
+
+    void set()
+    {
+        ((GPIO_Type *)gpioBase)->PSOR = pinMask;
+    }
+
+    void clear()
+    {
+        ((GPIO_Type *)gpioBase)->PCOR = pinMask;
+    }
+};
+
+/*!
+ * @brief Range pin manager.
+ */
+template <uint32_t gpioBase, uint32_t pinMask>
+class RangePin
+{
+public:
+    RangePin()
+    :   OutputPin<gpioBase, pinMask>
+    {
+        set_low_range();
+    }
+
+    void set_high_range()
+    {
+        clear();
+        _currentRange = kHighRange;
+    }
+
+    void set_low_range()
+    {
+        set();
+        _currentRange = kLowRange;
+    }
+
+    gain_range_t get_range() const
+    {
+        return _currentRange;
+    }
+
+protected:
+    gain_range_t _currentRange;
+};
 
 /*
  * @brief Manages a circular buffer of profile data.
@@ -96,9 +161,14 @@ protected:
 };
 
 
-static U64 stk_adc_task[ADC_TASK_STACK / sizeof(U64)];
+static RangePin<PIN_LOW_RANGE_EN_GPIO_BASE, PIN_LOW_RANGE_EN> s_rangePin;
+static OutputPin<PIN_CAL_EN_GPIO_BASE, PIN_CAL_EN> s_calEnablePin;
+static OutputPin<PIN_CTRL0_GPIO_BASE, PIN_CTRL0> s_ctrl0Pin;
+static OutputPin<PIN_CTRL1_GPIO_BASE, PIN_CTRL1> s_ctrl1Pin;
+static OutputPin<PIN_CTRL2_GPIO_BASE, PIN_CTRL2> s_ctrl2Pin;
+static OutputPin<PIN_CTRL3_GPIO_BASE, PIN_CTRL3> s_ctrl3Pin;
 
-gpio_led_state_t adc_led_value = GPIO_LED_ON;
+static U64 s_profilingThreadStack[PROFILING_TASK_STACK / sizeof(U64)];
 
 uint16_t gAdcResult = 0;
 uint16_t rangeBit = 0;
@@ -106,6 +176,18 @@ uint16_t emIndex = 0;
 uint16_t activeArray = 1;
 uint16_t arrayFull = 0;
 
+typedef struct _profiling_state {
+    OS_TID profilingTask;
+    uint32_t busClock_MHz;
+    gain_range_t currentRange;
+    volatile bool doRecord;
+    OS_SEM adcSem;
+} profiling_state_t;
+
+static profiling_state_t s_state;
+
+volatile bool g_profilingReadActive = false;
+volatile bool g_profilingInterrupted = false;
 
 uint16_t gAdcResultArray1[ADC_ARRAY_DEPTH] = {0};
 #if !VALIDATE_EM_CIRCUIT
@@ -242,8 +324,6 @@ bool profiling_read_pcsr(uint32_t * val)
 
 void profiling_init_adc(void)
 {
-    NVIC_EnableIRQ(ADC0_IRQn);
-
     adc16_config_t adcConfig;
     ADC16_GetDefaultConfig(&adcConfig);
     adcConfig.enableAsynchronousClock = false;
@@ -257,23 +337,6 @@ void profiling_init_adc(void)
     ADC16_Init(ADC0, &adcConfig);
 //     ADC16_Init(ADC1, &adcConfig);
 
-    if (adcConfig.resolution == kADC16_Resolution8or9Bit)
-    {
-        gAdcRes = 256;
-    }
-    else if (adcConfig.resolution == kADC16_Resolution12or13Bit)
-    {
-        gAdcRes = 4096;
-    }
-    else if (adcConfig.resolution == kADC16_Resolution10or11Bit)
-    {
-        gAdcRes = 1024;
-    }
-    else
-    {
-        gAdcRes = 65536;
-    }
-
     ADC16_SetHardwareAverage(ADC0, kADC16_HardwareAverageCount32);
     ADC16_DoAutoCalibration(ADC0);
     ADC16_SetHardwareAverage(ADC0, kADC16_HardwareAverageDisabled);
@@ -281,11 +344,15 @@ void profiling_init_adc(void)
 //     ADC16_SetHardwareAverage(ADC1, kADC16_HardwareAverageCount32);
 //     ADC16_DoAutoCalibration(ADC1);
 //     ADC16_SetHardwareAverage(ADC1, kADC16_HardwareAverageDisabled);
+
+    NVIC_EnableIRQ(ADC0_IRQn);
 }
 
 void calibrate(void)
 {
 #if 0
+    float fCalAverage = 0;
+    uint16_t ui16CalAverage = 0;
     uint32_t i = 0;
     uint32_t j = 0;
 
@@ -406,65 +473,7 @@ void calibrate(void)
 #endif
 }
 
-__task void profiling_thread(void)
-{
-    float gAdcRes = 0;
-    status_t calStatus;
-    uint16_t currIndex = 0;
-    uint32_t i = 0;
-    uint32_t j = 0;
-    float fCalAverage = 0;
-    uint16_t ui16CalAverage = 0;
-
-    ADC0->SC1[0] = ADC_SC1_ADCH(ENERGY_BENCH_VAL_CHN) | ADC_SC1_AIEN_MASK;
-
-    while (true)
-    {
-        // Wait for start flag
-        os_evt_wait_or(kProfileStartFlag, NO_TIMEOUT);
-
-        // Process DAP Command
-        os_sem_wait(&adc_sem, 0xFFFF);
-
-        // Semaphore is posted every time an array is filled.  So we need to process the
-        // non-active array.
-        if (arrayFull)
-        {
-            if (activeArray == 1)
-            {
-                for (currIndex = 0; currIndex < ADC_ARRAY_DEPTH; currIndex++)
-                {
-                    // Test to make sure ADC_Process_Result is working correctly.
-                    //ADC_Process_Result(currIndex);
-                    ADC_Process_Result(gAdcResultArray2[currIndex]);
-
-                    if(usb_state == USB_CONNECTED)
-                    {
-                      USBD_CDC_ACM_DataSend(adcResultAcii, 9);
-                    }
-                }
-              }
-              else
-              {
-                  for (currIndex = 0; currIndex < ADC_ARRAY_DEPTH; currIndex++)
-                  {
-                        // Test to make sure ADC_Process_Result is working correctly.
-                    //ADC_Process_Result(currIndex);
-                    ADC_Process_Result(gAdcResultArray1[currIndex]);
-
-                    if (usb_state == USB_CONNECTED)
-                    {
-                        USBD_CDC_ACM_DataSend(adcResultAcii, 9);
-                    }
-                }
-            }
-
-            arrayFull = 0;
-        }
-    }
-}
-
-void ADC0_IRQHandler(void)
+extern "C" void ADC0_IRQHandler(void)
 {
     gAdcResult = ADC0->R[0];
 
@@ -495,7 +504,7 @@ void ADC0_IRQHandler(void)
         gAdcResultArray1[emIndex] = gAdcResult;
     }
 
-    if(rangeBit == HIGH_RANGE_VAL)
+    if (s_rangePin.get_range() == kHighRange)
     {
         // Check result -- If less than 150 uA, switch to range = 0 (drive pin high
         //   for low range.
@@ -505,14 +514,10 @@ void ADC0_IRQHandler(void)
         //   150 uA is approximately 15 counts.  In low range mode, 200 uA is
         //   3972 counts (assuming 3.3V reference.  So simply use these as limits
         //   of when to switch.
-        if(gAdcResult < HIGH_RANGE_LOW_LIMIT)
+        if (gAdcResult < HIGH_RANGE_LOW_LIMIT)
         {
             // Need to drive pin high here to make sure we're in low range
-            RANGE_PIN_LOW_RANGE();
-
-            // Also store current range bit and switch range
-            // Store the range bit.
-            rangeBit = LOW_RANGE_VAL;
+            s_rangePin.set_low_range();
         }
     }
     else
@@ -528,11 +533,7 @@ void ADC0_IRQHandler(void)
         if (gAdcResult > LOW_RANGE_HIGH_LIMIT)
         {
             // Need to drive pin low here to make sure we're in high range
-            RANGE_PIN_HIGH_RANGE();
-
-            // Also store current range bit before switching ranges
-            // Store the range bit.
-            rangeBit = HIGH_RANGE_VAL;
+            s_rangePin.set_high_range();
         }
     }
 
@@ -542,7 +543,7 @@ void ADC0_IRQHandler(void)
         arrayFull = 1;
         // Once emIndex gets to greater than or equal to the Array depth,
         //  need to switch the active array.
-        if(activeArray == 1)
+        if (activeArray == 1)
             activeArray = 2;
         else
             activeArray = 1;
@@ -554,6 +555,77 @@ void ADC0_IRQHandler(void)
 #endif
 }
 
+__task void profiling_thread(void)
+{
+    uint16_t currIndex = 0;
+    uint32_t i = 0;
+    uint32_t j = 0;
+
+    while (true)
+    {
+        // Wait for start flag
+        os_evt_wait_or(kProfileStartFlag, NO_TIMEOUT);
+
+        ADC0->SC1[0] = ADC_SC1_ADCH(ENERGY_BENCH_VAL_CHN) | ADC_SC1_AIEN_MASK;
+
+        while (s_state.doRecord)
+        {
+            // Semaphore is posted every time an array is filled.  So we need to process the
+            // non-active array.
+            if (arrayFull)
+            {
+                if (activeArray == 1)
+                {
+//                 for (currIndex = 0; currIndex < ADC_ARRAY_DEPTH; currIndex++)
+//                 {
+//                     // Test to make sure ADC_Process_Result is working correctly.
+//                     //ADC_Process_Result(currIndex);
+//                     ADC_Process_Result(gAdcResultArray2[currIndex]);
+//
+//                     if(usb_state == USB_CONNECTED)
+//                     {
+//                       USBD_CDC_ACM_DataSend(adcResultAcii, 9);
+//                     }
+//                 }
+                }
+                else
+                {
+//                 for (currIndex = 0; currIndex < ADC_ARRAY_DEPTH; currIndex++)
+//                 {
+//                     // Test to make sure ADC_Process_Result is working correctly.
+//                     //ADC_Process_Result(currIndex);
+//                     ADC_Process_Result(gAdcResultArray1[currIndex]);
+//
+//                     if (usb_state == USB_CONNECTED)
+//                     {
+//                         USBD_CDC_ACM_DataSend(adcResultAcii, 9);
+//                     }
+//                 }
+                }
+
+                arrayFull = 0;
+            }
+        };
+    }
+}
+
+uint32_t hic_profile_control(profile_control_command_t command, uint32_t value)
+{
+    switch (command) {
+        case kProfileStartChannels:
+            break;
+        case kProfileStopChannels:
+            break;
+        case kProfileSetFrequency:
+            break;
+        default:
+    }
+}
+
+uint32_t hic_profile_read_data(uint32_t maxLength, void * data)
+{
+}
+
 void profiling_start_timestamp_timer(void)
 {
     // Setup PIT interrupt.
@@ -562,7 +634,7 @@ void profiling_start_timestamp_timer(void)
 //     NVIC_EnableIRQ(PIT0_IRQn);
 //     PIT_HAL_SetIntCmd(PIT_BASE, 0, true);
 
-    s_busClock_MHz = CLOCK_GetBusClkFreq() / 1000000;
+    s_state.busClock_MHz = CLOCK_GetBusClkFreq() / 1000000;
 
     pit_config_t pitConfig;
     PIT_GetDefaultConfig(&pitConfig);
@@ -577,38 +649,41 @@ uint32_t profiling_get_timestamp()
 //     uint64_t ts = (uint64_t(s_timestamp_upper_bits) << 32) | low;
 //     ts /= s_microsecondDivider;
 //     return uint32_t(ts);
-    return (~PIT_GetCurrentTimerCount(PIT, kPIT_Chnl_0)) / s_busClock_MHz;
+    return (~PIT_GetCurrentTimerCount(PIT, kPIT_Chnl_0)) / s_state.busClock_MHz;
 }
 
 extern "C" void PIT0_IRQHandler(void)
 {
-    ++s_timestamp_upper_bits;
+//     ++s_timestamp_upper_bits;
 
 //     PIT_HAL_ClearIntFlag(PIT_BASE, 0);
 }
 
 void profiling_init(void)
 {
+    s_rangePin.set_low_range();
+    s_state.doRecord = false;
+
     profiling_start_timestamp_timer();
     profiling_init_adc();
-    os_tsk_create_user(adc_process, ADC_TASK_PRIORITY, (void *)stk_adc_task, ADC_TASK_STACK);
+
+    os_sem_init(s_state.adcSem, 0);
+    s_state.profilingTask = os_tsk_create_user(profiling_thread, PROFILING_TASK_PRIORITY, (void *)s_profilingThreadStack, PROFILING_TASK_STACK);
 }
 
-typedef struct profile_channel_params {
-    uint8_t channelNumber;
-    char idString[9];
-    char unitString[9];
-    uint8_t dataSize;
-    uint8_t dataBits;
-    uint8_t rangeCount;
-    uint8_t freqCount;
-    struct {
-        float minVal;
-        float maxVal;
-    } ranges[4];
-    uint32_t freqs[16];
-} profile_channel_params_t;
+void profiling_start(void)
+{
+    g_profile.clear();
+    os_evt_set(kProfileStartFlag, s_state.profilingTask);
+    s_state.doRecord = true;
+}
 
+void profiling_stop(void)
+{
+    s_state.doRecord = false;
+}
+
+//! Definition of profile channels.
 const profile_channel_params_t g_profileChannelInfo[] = {
             // Channel 0: current measurement
             {
@@ -631,7 +706,7 @@ const profile_channel_params_t g_profileChannelInfo[] = {
             }
             // Channel 1: PC sample
             {
-                0, // channelNumber
+                1, // channelNumber
                 "PC", // idString
                 "", // unitString
                 sizeof(uint32_t), // dataSize
@@ -649,7 +724,7 @@ const profile_channel_params_t g_profileChannelInfo[] = {
             }
             // Channel 2: voltage measurement
             {
-                0, // channelNumber
+                2, // channelNumber
                 "voltage", // idString
                 "mV", // unitString
                 sizeof(uint16_t), // dataSize
