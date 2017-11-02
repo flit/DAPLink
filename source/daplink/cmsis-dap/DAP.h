@@ -173,8 +173,8 @@ extern "C" {
 #define DAP_TI_GET_CHANNEL_FREQS        2U
 
 // DAP TI Capture
-#define DAP_TI_START_RECORDING          0U
-#define DAP_TI_STOP_RECORDING           1U
+#define DAP_TI_START_RECORDING          1U
+#define DAP_TI_STOP_RECORDING           0U
 
 
 // Debug Port Register Addresses
