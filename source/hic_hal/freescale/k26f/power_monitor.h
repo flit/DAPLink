@@ -19,7 +19,6 @@
  * limitations under the License.
  */
 
-#include "power_monitor.h"
 
 
 #if defined(__cplusplus)

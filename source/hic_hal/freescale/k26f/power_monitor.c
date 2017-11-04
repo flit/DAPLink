@@ -24,8 +24,12 @@
 #include "target_reset.h"
 #include "swd_host.h"
 #include "debug_cm.h"
+#include "DAP_Config.h"
+#include "hic_profile.h"
+#include "fsl_adc16.h"
+#include "fsl_pit.h"
+#include "fsl_clock.h"
 #include <RTL.h>
-#include <algorithm>
 #include <string.h>
 
 // Declare ADC channel for Energy Monitor Circuit
@@ -82,7 +86,7 @@ typedef enum calibration_resistor {
 typedef struct profile_channel_entry {
     uint32_t timestamp;
     uint32_t value;
-} profile_channel_entry_t
+} profile_channel_entry_t;
 
 enum {
     kProfileEntries = TRACE_DATA_BLOCK_SIZE / sizeof(profile_channel_entry_t),
@@ -133,7 +137,7 @@ uint32_t channel_read(profile_channel_t *channel, uint32_t maxLength, void * dat
 
 void calibrate(void);
 
-bool profiling_setup_pcsr_read();
+bool profiling_setup_pcsr_read(void);
 bool profiling_read_pcsr(uint32_t * val);
 
 __task void profiling_thread(void);
@@ -141,7 +145,7 @@ __task void profiling_thread(void);
 void profiling_init_adc(void);
 
 void profiling_start_timestamp_timer(void);
-uint32_t profiling_get_timestamp();
+uint32_t profiling_get_timestamp(void);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Code
@@ -156,7 +160,7 @@ void calibration_enable(bool enable)
 
 void calibration_select_resistor(calibration_resistor_t whichResistor)
 {
-    PIN_CTRL0_GPIO->PCOR = PIN_CTRL0 | PIN_CTRL1 | PIN_CTRL2 | PIN_CTRL3l;
+    PIN_CTRL0_GPIO->PCOR = PIN_CTRL0 | PIN_CTRL1 | PIN_CTRL2 | PIN_CTRL3;
     PIN_CTRL0_GPIO->PSOR = (uint32_t)whichResistor;
 }
 
@@ -185,7 +189,7 @@ void channel_push(profile_channel_t *channel, const profile_channel_entry_t *ent
     {
         ++channel->count;
     }
-    channel->data[channel->_head] = *entry;
+    channel->data[channel->head] = *entry;
     channel->head = (++(channel->head)) % kProfileEntries;
 }
 
@@ -247,7 +251,7 @@ uint32_t channel_read(profile_channel_t *channel, uint32_t maxLength, void * dat
     return sizeof(profile_channel_entry_t) * readCount;
 }
 
-bool profiling_setup_pcsr_read()
+bool profiling_setup_pcsr_read(void)
 {
     swd_init_debug();
     // Turn off address increment.
@@ -457,7 +461,7 @@ void calibrate(void)
 #endif
 }
 
-extern "C" void ADC0_IRQHandler(void)
+void ADC0_IRQHandler(void)
 {
     uint32_t result = ADC0->R[0];
 
@@ -597,11 +601,15 @@ uint32_t hic_profile_control(profile_control_command_t command, uint32_t value)
             break;
 
         default:
+            break;
     }
+
+    return 0;
 }
 
 uint32_t hic_profile_read_data(uint32_t maxLength, void * data)
 {
+    return 0;
 }
 
 void profiling_start_timestamp_timer(void)
@@ -621,7 +629,7 @@ void profiling_start_timestamp_timer(void)
     PIT_StartTimer(PIT, kPIT_Chnl_0);
 }
 
-uint32_t profiling_get_timestamp()
+uint32_t profiling_get_timestamp(void)
 {
 //     uint32_t low = ~PIT_HAL_ReadTimerCount(PIT_BASE, 0);
 //     uint64_t ts = (uint64_t(s_timestamp_upper_bits) << 32) | low;
@@ -630,7 +638,7 @@ uint32_t profiling_get_timestamp()
     return (~PIT_GetCurrentTimerCount(PIT, kPIT_Chnl_0)) / s_state.busClock_MHz;
 }
 
-extern "C" void PIT0_IRQHandler(void)
+void PIT0_IRQHandler(void)
 {
 //     ++s_timestamp_upper_bits;
 
@@ -682,7 +690,7 @@ const profile_channel_params_t g_profileChannelInfo[] = {
                     100000, // 100 kHz
                     200000, // 200 kHz
                 }
-            }
+            },
             // Channel 1: PC sample
             {
                 1, // channelNumber
@@ -700,7 +708,7 @@ const profile_channel_params_t g_profileChannelInfo[] = {
                     100000, // 100 kHz
                     200000, // 200 kHz
                 }
-            }
+            },
             // Channel 2: voltage measurement
             {
                 2, // channelNumber
@@ -735,7 +743,7 @@ const profile_channel_params_t * hic_profile_get_channel_info(uint32_t channel)
     {
         return NULL;
     }
-    return g_profileChannelInfo[channel];
+    return &g_profileChannelInfo[channel];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
