@@ -24,12 +24,13 @@
  * Title:        TI.c CMSIS-DAP TI I/O
  *
  *---------------------------------------------------------------------------*/
-#if (TRACE_DATA_BLOCK_COUNT != 0)
 
 #include "DAP_config.h"
 #include "DAP.h"
 #include "hic_profile.h"
+#include <string.h>
 
+#if (TRACE_DATA_BLOCK_COUNT != 0)
 static inline uint32_t len_to_flag(uint32_t length)
 {
   return ((length == sizeof(uint8_t)) ? 0U
@@ -75,9 +76,9 @@ uint32_t TI_Info (const uint8_t *request, uint8_t *response) {
         response[11] = 0U;
         // ranges
         for (uint32_t i = 0; i < channelInfo->rangeCount; ++i) {
-          memcpy(&response[12 + 8 * i], channelInfo->ranges[i].minVal, sizeof(float));
+          memcpy(&response[12 + 8 * i], &channelInfo->ranges[i].minVal, sizeof(float));
           response += sizeof(float);
-          memcpy(&response[16 + 8 * i], channelInfo->ranges[i].maxVal, sizeof(float));
+          memcpy(&response[16 + 8 * i], &channelInfo->ranges[i].maxVal, sizeof(float));
           response += sizeof(float);
         }
         result = 12 + 8 * channelInfo->rangeCount;
@@ -106,9 +107,13 @@ uint32_t TI_Info (const uint8_t *request, uint8_t *response) {
 //   return:   number of bytes in response (lower 16 bits)
 //             number of bytes in request (upper 16 bits)
 uint32_t TI_Value (const uint8_t *request, uint8_t *response) {
-  *response = DAP_OK;
+//   uint16_t channelMask = *(uint16_t *)&request[0];
+//   uint8_t includeTimestamp = request[2];
 
-  return ((0U << 16) | 1U);
+  *(uint16_t *)response = 0; // channel mask
+
+
+  return ((3U << 16) | 1U);
 }
 
 // Process TI Info command and prepare response
@@ -118,7 +123,7 @@ uint32_t TI_Value (const uint8_t *request, uint8_t *response) {
 //             number of bytes in request (upper 16 bits)
 uint32_t TI_Capture (const uint8_t *request, uint8_t *response) {
   uint16_t channelMask = *(uint16_t *)&request[0];
-  uint16_t channelDiffMask = *(uint16_t *)&request[2];
+//   uint16_t channelDiffMask = *(uint16_t *)&request[2];
   uint8_t action = request[3];
   uint8_t freqSelect = request[4];
 
@@ -145,7 +150,7 @@ uint32_t TI_Capture (const uint8_t *request, uint8_t *response) {
 //   return:   number of bytes in response (lower 16 bits)
 //             number of bytes in request (upper 16 bits)
 uint32_t TI_TransferBlock (const uint8_t *request, uint8_t *response) {
-  uint8_t dataRequest = request[0];
+//   uint8_t dataRequest = request[0];
 
   uint32_t actualLength = hic_profile_read_data(1024, response);
 
