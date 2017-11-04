@@ -75,7 +75,10 @@ void gpio_init(void)
     // Enable pulldown on GPIO0_B to prevent it floating.
     PIN_GPIO0_B_PORT->PCR[PIN_GPIO0_B_BIT] = PORT_PCR_MUX(1) | PORT_PCR_PE_MASK | PORT_PCR_PS(0);
 
-    // configure power enable pin as GPIO
+    // Keep powered off in bootloader mode
+    // to prevent the target from effecting the state
+    // of the reset line / reset button
+    // configure pin as GPIO
     PIN_POWER_EN_PORT->PCR[PIN_POWER_EN_BIT] = PORT_PCR_MUX(1);
     // set output to 0
     PIN_POWER_EN_GPIO->PCOR = PIN_POWER_EN;
@@ -87,8 +90,8 @@ void gpio_init(void)
     // 20-50ms to drain.  During this time the target could be driving
     // the reset pin low, causing the bootloader to think the reset
     // button is pressed.
-    // Note: With optimization set to -O2 the value 1000000 delays for ~85ms
-    busy_wait(1000000);
+    // Note: With optimization set to -O2 the value 5115 delays for ~1ms @ 20.9Mhz core
+    busy_wait(5115 * 50);
 }
 
 void gpio_set_board_power(bool powerEnabled)
