@@ -28,15 +28,9 @@
 #include <algorithm>
 #include <string.h>
 
-// Declare ADC semaphore init count
-#define ADC_SEM_INIT_COUNT          0
 // Declare ADC channel for Energy Monitor Circuit
 #define ENERGY_BENCH_VAL_CHN                    (0x17U)
-#define ENERGY_BENCH_CAL_CHN                                        (0x16U)
-// Declare High Range Val for Energy Monitor circuit.
-#define HIGH_RANGE_VAL                          (1U)
-// Declare Low Range Val for Energy Monitor circuit.
-#define LOW_RANGE_VAL                           (0U)
+#define ENERGY_BENCH_CAL_CHN                    (0x16U)
 // Declare Low Range Limit value; This value determines when the Range bit is flipped from low to high
 #define LOW_RANGE_HIGH_LIMIT                    (3972U)
 // Declare High Range Limit value; This value determines when the Range bit is flipped from high to low.
@@ -52,6 +46,13 @@
 // #endif
 
 enum {
+    kCurrentChannel = 0,
+    kPCChannel = 1,
+    kVoltageChannel = 2,
+    kChannelCount = 3,
+};
+
+enum {
     kAdcMaxValue = 65535,
 };
 
@@ -60,128 +61,50 @@ enum {
     kProfileStartFlag = 1,
 };
 
-//! @brief ADC channels.
-enum {
-    kLowSideAdcChannel = 4,         //!< Channel 4b
-    kHighSideAdcChannel = 15,       //!< Channel 15
-    kBandgapAdcChannel = 27         //!< Bandgap channel
-};
-
 //! @brief Value of the DWT_PCSR register returned when the CPU is halted.
-const uint32_t kHaltedPCSR = 0xffffffffu;
+enum {
+    kHaltedPCSR = 0xffffffffu,
+};
 
 typedef enum gain_range {
     kLowRange,
     kHighRange,
 } gain_range_t;
 
-/*!
- * @brief GPIO template.
- */
-template <uint32_t gpioBase, uint32_t pinMask>
-class OutputPin
-{
-public:
-    OutputPin()
-    {
-        ((GPIO_Type *)gpioBase)->PDDR |= pinMask;
-    }
+typedef enum calibration_resistor {
+    kNoCalibrationResistor = 0,
+    kHighRangeHighCurrent = PIN_CTRL0,
+    kHighRangeLowCurrent = PIN_CTRL1,
+    kLowRangeHighCurrent = PIN_CTRL2,
+    kLowRangeLowCurrent = PIN_CTRL3,
+} calibration_resistor_t;
 
-    void set()
-    {
-        ((GPIO_Type *)gpioBase)->PSOR = pinMask;
-    }
+typedef struct profile_channel_entry {
+    uint32_t timestamp;
+    uint32_t value;
+} profile_channel_entry_t
 
-    void clear()
-    {
-        ((GPIO_Type *)gpioBase)->PCOR = pinMask;
-    }
+enum {
+    kProfileEntries = TRACE_DATA_BLOCK_SIZE / sizeof(profile_channel_entry_t),
 };
 
-/*!
- * @brief Range pin manager.
- */
-template <uint32_t gpioBase, uint32_t pinMask>
-class RangePin
-{
-public:
-    RangePin()
-    :   OutputPin<gpioBase, pinMask>
-    {
-        set_low_range();
-    }
-
-    void set_high_range()
-    {
-        clear();
-        _currentRange = kHighRange;
-    }
-
-    void set_low_range()
-    {
-        set();
-        _currentRange = kLowRange;
-    }
-
-    gain_range_t get_range() const
-    {
-        return _currentRange;
-    }
-
-protected:
-    gain_range_t _currentRange;
-};
-
-/*
- * @brief Manages a circular buffer of profile data.
- */
-class ProfileData
-{
-public:
-    struct Entry
-    {
-        uint32_t timestamp;
-        uint32_t pc;
-        uint32_t milliamps;
-    };
-
-    ProfileData();
-
-    void clear();
-    void append(Entry & entry);
-    uint32_t read(uint32_t maxLength, void * data);
-    uint32_t get_count() { return m_count; }
-
-protected:
-    Entry m_data[kProfileEntries];
-    int32_t m_head;    //!< Index where next entry will be written.
-    int32_t m_count;   //!< Number of valid entries.
-    Entry m_lastReturned;
-    bool m_isLastValid;
-};
-
-
-static RangePin<PIN_LOW_RANGE_EN_GPIO_BASE, PIN_LOW_RANGE_EN> s_rangePin;
-static OutputPin<PIN_CAL_EN_GPIO_BASE, PIN_CAL_EN> s_calEnablePin;
-static OutputPin<PIN_CTRL0_GPIO_BASE, PIN_CTRL0> s_ctrl0Pin;
-static OutputPin<PIN_CTRL1_GPIO_BASE, PIN_CTRL1> s_ctrl1Pin;
-static OutputPin<PIN_CTRL2_GPIO_BASE, PIN_CTRL2> s_ctrl2Pin;
-static OutputPin<PIN_CTRL3_GPIO_BASE, PIN_CTRL3> s_ctrl3Pin;
+typedef struct profile_channel {
+    profile_channel_entry_t data[kProfileEntries];
+    int32_t head;    //!< Index where next entry will be written.
+    int32_t count;   //!< Number of valid entries.
+    profile_channel_entry_t lastReturned;
+    bool isLastValid;
+} profile_channel_t;
 
 static U64 s_profilingThreadStack[PROFILING_TASK_STACK / sizeof(U64)];
-
-uint16_t gAdcResult = 0;
-uint16_t rangeBit = 0;
-uint16_t emIndex = 0;
-uint16_t activeArray = 1;
-uint16_t arrayFull = 0;
 
 typedef struct _profiling_state {
     OS_TID profilingTask;
     uint32_t busClock_MHz;
     gain_range_t currentRange;
-    volatile bool doRecord;
+    volatile uint32_t recordChannelMask;
     OS_SEM adcSem;
+    profile_channel_t channels[kChannelCount];
 } profiling_state_t;
 
 static profiling_state_t s_state;
@@ -189,55 +112,116 @@ static profiling_state_t s_state;
 volatile bool g_profilingReadActive = false;
 volatile bool g_profilingInterrupted = false;
 
-uint16_t gAdcResultArray1[ADC_ARRAY_DEPTH] = {0};
-#if !VALIDATE_EM_CIRCUIT
-uint16_t gAdcResultArray2[ADC_ARRAY_DEPTH] = {0};
-#endif
+// uint16_t gAdcResultArray1[ADC_ARRAY_DEPTH] = {0};
+// #if !VALIDATE_EM_CIRCUIT
+// uint16_t gAdcResultArray2[ADC_ARRAY_DEPTH] = {0};
+// #endif
 
-static OS_SEM adc_sem;
+////////////////////////////////////////////////////////////////////////////////
+// Prototypes
+////////////////////////////////////////////////////////////////////////////////
 
-static uint32_t s_busClock_MHz = 0;
+void calibration_enable(bool enable);
+void calibration_select_resistor(calibration_resistor_t whichResistor);
+void range_select(gain_range_t whichRange);
+
+void channel_init(profile_channel_t *channel);
+inline uint32_t channel_get_count(profile_channel_t *channel);
+void channel_push(profile_channel_t *channel, const profile_channel_entry_t *entry);
+bool channel_pop(profile_channel_t *channel, profile_channel_entry_t *entry);
+uint32_t channel_read(profile_channel_t *channel, uint32_t maxLength, void * data);
+
+void calibrate(void);
+
+bool profiling_setup_pcsr_read();
+bool profiling_read_pcsr(uint32_t * val);
+
+__task void profiling_thread(void);
+
+void profiling_init_adc(void);
+
+void profiling_start_timestamp_timer(void);
+uint32_t profiling_get_timestamp();
 
 ////////////////////////////////////////////////////////////////////////////////
 // Code
 ////////////////////////////////////////////////////////////////////////////////
 
-ProfileData::ProfileData()
-:   m_head(0),
-    m_count(0),
-    m_isLastValid(false)
+void calibration_enable(bool enable)
 {
+    enable
+        ? (PIN_CAL_EN_GPIO->PSOR = PIN_CAL_EN)
+        : (PIN_CAL_EN_GPIO->PCOR = PIN_CAL_EN);
 }
 
-void ProfileData::clear()
+void calibration_select_resistor(calibration_resistor_t whichResistor)
 {
-    m_count = 0;
-    m_head = 0;
-    m_isLastValid = false;
+    PIN_CTRL0_GPIO->PCOR = PIN_CTRL0 | PIN_CTRL1 | PIN_CTRL2 | PIN_CTRL3l;
+    PIN_CTRL0_GPIO->PSOR = (uint32_t)whichResistor;
 }
 
-void ProfileData::append(Entry & entry)
+void range_select(gain_range_t whichRange)
 {
-    if (m_count < kProfileEntries)
+    (whichRange == kLowRange)
+        ? (PIN_LOW_RANGE_EN_GPIO->PSOR = PIN_LOW_RANGE_EN)
+        : (PIN_LOW_RANGE_EN_GPIO->PCOR = PIN_LOW_RANGE_EN);
+}
+
+void channel_init(profile_channel_t *channel)
+{
+    channel->head = 0;
+    channel->count = 0;
+    channel->isLastValid = false;
+}
+
+inline uint32_t channel_get_count(profile_channel_t *channel)
+{
+    return channel->count;
+}
+
+void channel_push(profile_channel_t *channel, const profile_channel_entry_t *entry)
+{
+    if (channel->count < kProfileEntries)
     {
-        ++m_count;
+        ++channel->count;
     }
-    m_data[m_head] = entry;
-    m_head = (++m_head) % kProfileEntries;
+    channel->data[channel->_head] = *entry;
+    channel->head = (++(channel->head)) % kProfileEntries;
 }
 
-uint32_t ProfileData::read(uint32_t maxLength, void * data)
+bool channel_pop(profile_channel_t *channel, profile_channel_entry_t *entry)
+{
+    if (channel->count == 0)
+    {
+        return false;
+    }
+
+    // Read oldest entry.
+    int32_t readIndex = channel->head - channel->count;
+    if (readIndex < 0)
+    {
+        readIndex = kProfileEntries + readIndex;
+    }
+
+    *entry = channel->data[readIndex];
+
+    --channel->count;
+
+    return true;
+}
+
+uint32_t channel_read(profile_channel_t *channel, uint32_t maxLength, void * data)
 {
     uint8_t * dest = (uint8_t *)data;
-    int32_t maxReadCount = maxLength / sizeof(Entry);
-    int32_t readCount = std::min(maxReadCount, m_count);
+    int32_t maxReadCount = maxLength / sizeof(profile_channel_entry_t);
+    int32_t readCount = MIN(maxReadCount, channel->count);
     if (readCount == 0)
     {
         return 0;
     }
 
     // Figure out where we start reading from. Read the oldest data first.
-    int32_t readIndex = m_head - m_count;
+    int32_t readIndex = channel->head - channel->count;
     if (readIndex < 0)
     {
         readIndex = kProfileEntries + readIndex;
@@ -251,16 +235,16 @@ uint32_t ProfileData::read(uint32_t maxLength, void * data)
         {
             thisReadCount = kProfileEntries - readIndex;
         }
-        uint32_t readSize = sizeof(Entry) * thisReadCount;
-        memcpy(dest, &m_data[readIndex], readSize);
+        uint32_t readSize = sizeof(profile_channel_entry_t) * thisReadCount;
+        memcpy(dest, &channel->data[readIndex], readSize);
         dest += readSize;
         remainingCount -= thisReadCount;
         readIndex = (readIndex + thisReadCount) % kProfileEntries;
     }
 
-    m_count -= readCount;
+    channel->count -= readCount;
 
-    return sizeof(Entry) * readCount;
+    return sizeof(profile_channel_entry_t) * readCount;
 }
 
 bool profiling_setup_pcsr_read()
@@ -404,7 +388,7 @@ void calibrate(void)
             }
 
             // Let Voltage settle
-            os_sem_wait(&adc_sem, 0xFFFF);
+            os_sem_wait(&s_state.adcSem, 0xFFFF);
 
             // Need to set emIndex to 0 so that the array is filled properly
             emIndex = 0;
@@ -415,7 +399,7 @@ void calibrate(void)
             while (!arrayFull)
             {
                 // Wait for ADC semaphore to be sent
-                os_sem_wait(&adc_sem, 0xFFFF);
+                os_sem_wait(&s_state.adcSem, 0xFFFF);
             }
             arrayFull = 0;
 
@@ -424,7 +408,7 @@ void calibrate(void)
             while (!arrayFull)
             {
                 // Wait for ADC semaphore to be sent
-                os_sem_wait(&adc_sem, 0xFFFF);
+                os_sem_wait(&s_state.adcSem, 0xFFFF);
             }
             arrayFull = 0;
 
@@ -475,36 +459,36 @@ void calibrate(void)
 
 extern "C" void ADC0_IRQHandler(void)
 {
-    gAdcResult = ADC0->R[0];
+    uint32_t result = ADC0->R[0];
 
-#if 0 //VALIDATE_EM_CIRCUIT
-    if (emIndex >= ADC_ARRAY_DEPTH)
-    {
-        arrayFull = 1;
-        ADC0->SC1[0] = 0;
-    }
-    else
-    {
-        gAdcResultArray1[emIndex] = gAdcResult;
-        emIndex++;
-    }
-#else
-    if(activeArray == 2)
-    {
-        gAdcResultArray2[emIndex] = gAdcResult;
-    }
-    else if(activeArray == 1)
-    {
-        gAdcResultArray1[emIndex] = gAdcResult;
-    }
-    else
-    {
-        activeArray = 1;
-        emIndex = 0;
-        gAdcResultArray1[emIndex] = gAdcResult;
-    }
+// #if 0 //VALIDATE_EM_CIRCUIT
+//     if (emIndex >= ADC_ARRAY_DEPTH)
+//     {
+//         arrayFull = 1;
+//         ADC0->SC1[0] = 0;
+//     }
+//     else
+//     {
+//         gAdcResultArray1[emIndex] = gAdcResult;
+//         emIndex++;
+//     }
+// #else
+//     if(activeArray == 2)
+//     {
+//         gAdcResultArray2[emIndex] = gAdcResult;
+//     }
+//     else if(activeArray == 1)
+//     {
+//         gAdcResultArray1[emIndex] = gAdcResult;
+//     }
+//     else
+//     {
+//         activeArray = 1;
+//         emIndex = 0;
+//         gAdcResultArray1[emIndex] = gAdcResult;
+//     }
 
-    if (s_rangePin.get_range() == kHighRange)
+    if (s_state.currentRange == kHighRange)
     {
         // Check result -- If less than 150 uA, switch to range = 0 (drive pin high
         //   for low range.
@@ -514,10 +498,11 @@ extern "C" void ADC0_IRQHandler(void)
         //   150 uA is approximately 15 counts.  In low range mode, 200 uA is
         //   3972 counts (assuming 3.3V reference.  So simply use these as limits
         //   of when to switch.
-        if (gAdcResult < HIGH_RANGE_LOW_LIMIT)
+        if (result < HIGH_RANGE_LOW_LIMIT)
         {
             // Need to drive pin high here to make sure we're in low range
-            s_rangePin.set_low_range();
+            range_select(kLowRange);
+            // todo: changing the range will probably mess up the next sample
         }
     }
     else
@@ -530,82 +515,61 @@ extern "C" void ADC0_IRQHandler(void)
         //   150 uA is approximately 15 counts.  In low range mode, 200 uA is
         //   3972 counts (assuming 3.3V reference.  So simply use these as limits
         //   of when to switch.
-        if (gAdcResult > LOW_RANGE_HIGH_LIMIT)
+        if (result > LOW_RANGE_HIGH_LIMIT)
         {
             // Need to drive pin low here to make sure we're in high range
-            s_rangePin.set_high_range();
+            range_select(kHighRange);
+            // todo: changing the range will probably mess up the next sample
+
+            // Ignore this sample.
+            return;
         }
     }
 
-    emIndex++;
-    if (emIndex >= ADC_ARRAY_DEPTH)
-    {
-        arrayFull = 1;
-        // Once emIndex gets to greater than or equal to the Array depth,
-        //  need to switch the active array.
-        if (activeArray == 1)
-            activeArray = 2;
-        else
-            activeArray = 1;
-        // Also need to send the semaphore so the array will be processed.
-        //os_sem_send(&adc_sem);
-        // Reset emIndex so we don't write past the arrays limits.
-        emIndex = 0;
-    }
-#endif
+    // Save sample.
+    profile_channel_entry_t entry;
+    entry.timestamp = profiling_get_timestamp();
+    entry.value = result;
+    channel_push(&s_state.channels[kCurrentChannel], &entry);
+
+//     emIndex++;
+//     if (emIndex >= ADC_ARRAY_DEPTH)
+//     {
+//         arrayFull = 1;
+//         // Once emIndex gets to greater than or equal to the Array depth,
+//         //  need to switch the active array.
+//         if (activeArray == 1)
+//             activeArray = 2;
+//         else
+//             activeArray = 1;
+//         // Also need to send the semaphore so the array will be processed.
+//         //os_sem_send(&s_state.adcSem);
+//         // Reset emIndex so we don't write past the arrays limits.
+//         emIndex = 0;
+//     }
+// #endif
 }
 
 __task void profiling_thread(void)
 {
-    uint16_t currIndex = 0;
-    uint32_t i = 0;
-    uint32_t j = 0;
+//     uint16_t currIndex = 0;
+//     uint32_t i = 0;
+//     uint32_t j = 0;
 
     while (true)
     {
         // Wait for start flag
         os_evt_wait_or(kProfileStartFlag, NO_TIMEOUT);
 
+        // Start continuous conversions.
         ADC0->SC1[0] = ADC_SC1_ADCH(ENERGY_BENCH_VAL_CHN) | ADC_SC1_AIEN_MASK;
 
-        while (s_state.doRecord)
+        while (s_state.recordChannelMask)
         {
-            // Semaphore is posted every time an array is filled.  So we need to process the
-            // non-active array.
-            if (arrayFull)
-            {
-                if (activeArray == 1)
-                {
-//                 for (currIndex = 0; currIndex < ADC_ARRAY_DEPTH; currIndex++)
-//                 {
-//                     // Test to make sure ADC_Process_Result is working correctly.
-//                     //ADC_Process_Result(currIndex);
-//                     ADC_Process_Result(gAdcResultArray2[currIndex]);
-//
-//                     if(usb_state == USB_CONNECTED)
-//                     {
-//                       USBD_CDC_ACM_DataSend(adcResultAcii, 9);
-//                     }
-//                 }
-                }
-                else
-                {
-//                 for (currIndex = 0; currIndex < ADC_ARRAY_DEPTH; currIndex++)
-//                 {
-//                     // Test to make sure ADC_Process_Result is working correctly.
-//                     //ADC_Process_Result(currIndex);
-//                     ADC_Process_Result(gAdcResultArray1[currIndex]);
-//
-//                     if (usb_state == USB_CONNECTED)
-//                     {
-//                         USBD_CDC_ACM_DataSend(adcResultAcii, 9);
-//                     }
-//                 }
-                }
+        }
 
-                arrayFull = 0;
-            }
-        };
+        // Stop continuous conversions.
+        ADC0->SC1[0] = 0x1f;
     }
 }
 
@@ -613,11 +577,25 @@ uint32_t hic_profile_control(profile_control_command_t command, uint32_t value)
 {
     switch (command) {
         case kProfileStartChannels:
+            channel_init(&s_state.channels[kCurrentChannel]);
+            if (s_state.recordChannelMask == 0)
+            {
+                s_state.recordChannelMask |= value;
+                os_evt_set(kProfileStartFlag, s_state.profilingTask);
+            }
+            else
+            {
+                s_state.recordChannelMask |= value;
+            }
             break;
+
         case kProfileStopChannels:
+            s_state.recordChannelMask &= ~value;
             break;
+
         case kProfileSetFrequency:
             break;
+
         default:
     }
 }
@@ -661,26 +639,27 @@ extern "C" void PIT0_IRQHandler(void)
 
 void profiling_init(void)
 {
-    s_rangePin.set_low_range();
-    s_state.doRecord = false;
+    // Switch power monitor pins to outputs, driven low by default.
+    PIN_LOW_RANGE_EN_GPIO->PCOR = PIN_LOW_RANGE_EN;
+    PIN_LOW_RANGE_EN_GPIO->PDDR |= PIN_LOW_RANGE_EN;
+    PIN_CAL_EN_GPIO->PCOR = PIN_CAL_EN;
+    PIN_CAL_EN_GPIO->PDDR |= PIN_CAL_EN;
+    PIN_G1_GPIO->PCOR = PIN_G1;
+    PIN_G1_GPIO->PDDR |= PIN_G1;
+    PIN_G2_GPIO->PCOR = PIN_G2;
+    PIN_G2_GPIO->PDDR |= PIN_G2;
+
+    range_select(kLowRange);
+    s_state.recordChannelMask = false;
+    channel_init(&s_state.channels[kCurrentChannel]);
+    channel_init(&s_state.channels[kPCChannel]);
+    channel_init(&s_state.channels[kVoltageChannel]);
 
     profiling_start_timestamp_timer();
     profiling_init_adc();
 
     os_sem_init(s_state.adcSem, 0);
     s_state.profilingTask = os_tsk_create_user(profiling_thread, PROFILING_TASK_PRIORITY, (void *)s_profilingThreadStack, PROFILING_TASK_STACK);
-}
-
-void profiling_start(void)
-{
-    g_profile.clear();
-    os_evt_set(kProfileStartFlag, s_state.profilingTask);
-    s_state.doRecord = true;
-}
-
-void profiling_stop(void)
-{
-    s_state.doRecord = false;
 }
 
 //! Definition of profile channels.
@@ -741,7 +720,9 @@ const profile_channel_params_t g_profileChannelInfo[] = {
             }
         };
 
-const uint32_t kProfileChannelCount = ARRAY_SIZE(g_profileChannelInfo);
+enum {
+    kProfileChannelCount = ARRAY_SIZE(g_profileChannelInfo),
+};
 
 uint32_t hic_profile_get_channels(void)
 {

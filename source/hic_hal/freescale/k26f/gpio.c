@@ -28,6 +28,7 @@
 #include "daplink.h"
 #include "hic_init.h"
 #include "fsl_clock.h"
+#include "power_monitor.h"
 
 static void busy_wait(uint32_t cycles)
 {
@@ -71,6 +72,12 @@ void gpio_init(void)
     PIN_SWO_RX_PORT->PCR[PIN_SWO_RX_BIT] = PORT_PCR_MUX(3); // UART1
     PIN_SWO_RX_GPIO->PDDR &= ~(1 << PIN_SWO_RX_BIT); // Input
 
+    // Configure power monitor pins as GPIO with pulldowns enabled.
+    PIN_LOW_RANGE_EN_PORT->PCR[PIN_LOW_RANGE_EN_BIT] = PORT_PCR_MUX(1) | PORT_PCR_PE_MASK | PORT_PCR_PS(0);
+    PIN_CAL_EN_PORT->PCR[PIN_CAL_EN_BIT] = PORT_PCR_MUX(1) | PORT_PCR_PE_MASK | PORT_PCR_PS(0);
+    PIN_G1_PORT->PCR[PIN_G1_BIT] = PORT_PCR_MUX(1) | PORT_PCR_PE_MASK | PORT_PCR_PS(0);
+    PIN_G2_PORT->PCR[PIN_G2_BIT] = PORT_PCR_MUX(1) | PORT_PCR_PE_MASK | PORT_PCR_PS(0);
+
     // Enable pulldowns on power monitor control signals to reduce power consumption.
     PIN_CTRL0_PORT->PCR[PIN_CTRL0_BIT] = PORT_PCR_MUX(1) | PORT_PCR_PE_MASK | PORT_PCR_PS(0);
     PIN_CTRL1_PORT->PCR[PIN_CTRL1_BIT] = PORT_PCR_MUX(1) | PORT_PCR_PE_MASK | PORT_PCR_PS(0);
@@ -104,6 +111,9 @@ void gpio_set_board_power(bool powerEnabled)
     if (powerEnabled) {
         // enable power switch
         PIN_POWER_EN_GPIO->PSOR = PIN_POWER_EN;
+
+        // Init power monitor.
+        profiling_init();
     }
     else {
         // disable power switch

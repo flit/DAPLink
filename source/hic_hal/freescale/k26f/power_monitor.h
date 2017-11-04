@@ -22,5 +22,14 @@
 #include "power_monitor.h"
 
 
-void power_monitor_init(void);
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+void profiling_init(void);
+
+#if defined(__cplusplus)
+}
+#endif
+
 
