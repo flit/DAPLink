@@ -20,6 +20,7 @@
  */
 
 #include "virtual_fs.h"
+#include "flash_manager.h"
 
 const char *board_id = "0225";
 
@@ -34,3 +35,8 @@ __attribute__((aligned(4)))
 const vfs_filename_t daplink_drive_name =     "K32W042";
 __attribute__((aligned(4)))
 const char *const daplink_target_url = "http://www.nxp.com/frdm-k32w042";
+
+void prerun_board_config(void)
+{
+    flash_manager_set_page_erase(true);
+}
