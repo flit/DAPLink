@@ -1,9 +1,0 @@
-common:
-    macros:
-        - SDA_SWD_OE_PIN_A4=1
-    sources:
-        board:
-            - source/board/frdmkl28zem.c
-        target:
-            - source/target/freescale/kl28z/target.c
-            - source/target/freescale/target_reset_Lseries.c

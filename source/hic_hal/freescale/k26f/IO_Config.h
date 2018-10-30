@@ -60,11 +60,7 @@ COMPILER_ASSERT(DAPLINK_HIC_ID == DAPLINK_HIC_ID_K26F);
 // (SDA_SWD_EN on schematic)
 #define PIN_SWD_OE_PORT        PORTA
 #define PIN_SWD_OE_GPIO        PTA
-#if SDA_SWD_OE_PIN_A4
-#define PIN_SWD_OE_BIT         4
-#else
 #define PIN_SWD_OE_BIT         9
-#endif
 
 // SWO Input Pin               PTC3
 // (SDA_SWD_SWO on schematic)
