@@ -29,6 +29,14 @@
 #include "hic_init.h"
 #include "fsl_clock.h"
 
+static void busy_wait(uint32_t cycles)
+{
+    volatile uint32_t i = cycles;
+    while (i > 0) {
+        i--;
+    }
+}
+
 void gpio_init(void)
 {
     hic_init();
@@ -69,6 +77,33 @@ void gpio_init(void)
 
     // Enable pulldown on GPIO0_B to prevent it floating.
     PIN_GPIO0_B_PORT->PCR[PIN_GPIO0_B_BIT] = PORT_PCR_MUX(1) | PORT_PCR_PE_MASK | PORT_PCR_PS(0);
+
+    // configure power enable pin as GPIO
+    PIN_POWER_EN_PORT->PCR[PIN_POWER_EN_BIT] = PORT_PCR_MUX(1);
+    // set output to 0
+    PIN_POWER_EN_GPIO->PCOR = PIN_POWER_EN;
+    // switch gpio to output
+    PIN_POWER_EN_GPIO->PDDR |= PIN_POWER_EN;
+
+    // Let the voltage rails stabilize.  This is especailly important
+    // during software resets, since the target's 3.3v rail can take
+    // 20-50ms to drain.  During this time the target could be driving
+    // the reset pin low, causing the bootloader to think the reset
+    // button is pressed.
+    // Note: With optimization set to -O2 the value 1000000 delays for ~85ms
+    busy_wait(1000000);
+}
+
+void gpio_set_board_power(bool powerEnabled)
+{
+    if (powerEnabled) {
+        // enable power switch
+        PIN_POWER_EN_GPIO->PSOR = PIN_POWER_EN;
+    }
+    else {
+        // disable power switch
+        PIN_POWER_EN_GPIO->PCOR = PIN_POWER_EN;
+    }
 }
 
 uint32_t UART1_GetFreq(void)
@@ -107,13 +142,12 @@ void gpio_set_msc_led(gpio_led_state_t state)
     gpio_set_hid_led(state);
 }
 
-uint8_t gpio_get_sw_reset(void)
+uint8_t gpio_get_reset_btn_no_fwrd(void)
 {
-    return (PIN_nRESET_GPIO->PDIR & PIN_nRESET) ? 1 : 0;
+    return (PIN_nRESET_GPIO->PDIR & PIN_nRESET) ? 0 : 1;
 }
 
-void target_forward_reset(bool assert_reset)
+uint8_t gpio_get_reset_btn_fwrd(void)
 {
-    // Do nothing - reset button is already tied to the target
-    //              reset pin on hic interface hardware
+    return 0;
 }

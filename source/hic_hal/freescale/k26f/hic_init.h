@@ -30,9 +30,6 @@ void hic_init(void);
 //! @brief Enable clocks required for USB operation.
 void hic_enable_usb_clocks(void);
 
-//! @brief Enable power to the target.
-void hic_power_target(void);
-
 #if defined(__cplusplus)
 }
 #endif
