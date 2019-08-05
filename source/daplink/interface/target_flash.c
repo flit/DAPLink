@@ -61,6 +61,7 @@ static const flash_intf_t flash_intf = {
     target_flash_set,
 };
 
+extern const uint32_t my_second_flash_blob[];  // nxa07750
 static state_t state = STATE_CLOSED;
 
 const flash_intf_t *const flash_intf_target = &flash_intf;
@@ -80,7 +81,8 @@ static program_target_t * get_flash_algo(uint32_t addr)
 {
     region_info_t * flash_region = g_board_info.target_cfg->flash_regions;
 
-    for (; flash_region->start != 0 || flash_region->end != 0; ++flash_region) {
+    for (; flash_region->start != 0 || flash_region->end != 0; ++flash_region) { // Original
+	  //for (; flash_region->start != 0 || flash_region->end != 0; flash_region++) {
         if (addr >= flash_region->start && addr <= flash_region->end) {
             flash_start = flash_region->start; //save the flash start
             if (flash_region->flash_algo) {
@@ -203,6 +205,8 @@ static error_t target_flash_uninit(void)
 
 static error_t target_flash_program_page(uint32_t addr, const uint8_t *buf, uint32_t size)
 {
+	uint8_t targetAlgo = 0, flashAlgoBit = 0;	// nxa07750
+	uint32_t i, j; // nxa07750
     if (g_board_info.target_cfg) {
         error_t status = ERROR_SUCCESS;
         program_target_t * flash = current_flash_algo;
@@ -231,6 +235,25 @@ static error_t target_flash_program_page(uint32_t addr, const uint8_t *buf, uint
             if (!swd_write_memory(flash->program_buffer, (uint8_t *)buf, write_size)) {
                 return ERROR_ALGO_DATA_SEQ;
             }
+						
+						// nxa07750
+//						if(addr >= 0x01000000)
+//						{
+//							for(j=0; j<200; j++)
+//							{
+//								if(!swd_read_memory(0x20000000+j, &targetAlgo, 1))
+//								{
+//									return ERROR_ALGO_DATA_SEQ;
+//								}
+//							
+//								flashAlgoBit = (my_second_flash_blob[j/4] & (1<<(j%4)));
+//								if(targetAlgo != flashAlgoBit)
+//								{
+//									return ERROR_ALGO_DATA_SEQ;
+//								}
+//							
+//							}
+//						} // nxa07750
 
             // Run flash programming
             if (!swd_flash_syscall_exec(&flash->sys_call_s,
@@ -245,22 +268,24 @@ static error_t target_flash_program_page(uint32_t addr, const uint8_t *buf, uint
             if (config_get_automation_allowed()) {
                 // Verify data flashed if in automation mode
                 if (flash->verify != 0) {
-                    status = flash_func_start(FLASH_FUNC_VERIFY);
-                    if (status != ERROR_SUCCESS) {
-                        return status;
-                    }
-                    if (!swd_flash_syscall_exec(&flash->sys_call_s,
-                                        flash->verify,
-                                        addr,
-                                        write_size,
-                                        flash->program_buffer,
-                                        0)) {
-                        return ERROR_WRITE_VERIFY;
-                    }
-                } else {
+//                    status = flash_func_start(FLASH_FUNC_VERIFY);
+//                    if (status != ERROR_SUCCESS) {
+//                        return status;
+//                    }
+//                    if (!swd_flash_syscall_exec(&flash->sys_call_s,
+//                                        flash->verify,
+//                                        addr,
+//                                        write_size,
+//                                        flash->program_buffer,
+//                                        0)) {
+//                        return ERROR_WRITE_VERIFY;
+//                    }
+//                } else {
                     while (write_size > 0) {
                         uint8_t rb_buf[16];
-                        uint32_t verify_size = MIN(write_size, sizeof(rb_buf));
+												uint32_t rb_buf_size = sizeof(rb_buf);
+                        //uint32_t verify_size = MIN(write_size, sizeof(rb_buf));
+											  uint32_t verify_size = MIN(write_size, rb_buf_size);
                         if (!swd_read_memory(addr, rb_buf, verify_size)) {
                             return ERROR_ALGO_DATA_SEQ;
                         }
