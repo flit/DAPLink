@@ -25,25 +25,25 @@
 #include "target_family.h"
 #include "target_board.h"
 
-// Stub families 
-const target_family_descriptor_t g_hw_reset_family = { 
-    .family_id = kStub_HWReset_FamilyID, 
-    .default_reset_type = kHardwareReset, 
-}; 
- 
-const target_family_descriptor_t g_sw_vectreset_family = { 
-    .family_id = kStub_SWVectReset_FamilyID, 
-    .default_reset_type = kSoftwareReset, 
-    .soft_reset_type = VECTRESET, 
-}; 
- 
-const target_family_descriptor_t g_sw_sysresetreq_family = { 
-    .family_id = kStub_SWSysReset_FamilyID, 
-    .default_reset_type = kSoftwareReset, 
-    .soft_reset_type = SYSRESETREQ, 
+// Stub families
+const target_family_descriptor_t g_hw_reset_family = {
+    .family_id = kStub_HWReset_FamilyID,
+    .default_reset_type = kHardwareReset,
 };
 
-//Weakly define family
+const target_family_descriptor_t g_sw_vectreset_family = {
+    .family_id = kStub_SWVectReset_FamilyID,
+    .default_reset_type = kSoftwareReset,
+    .soft_reset_type = VECTRESET,
+};
+
+const target_family_descriptor_t g_sw_sysresetreq_family = {
+    .family_id = kStub_SWSysReset_FamilyID,
+    .default_reset_type = kSoftwareReset,
+    .soft_reset_type = SYSRESETREQ,
+};
+
+// Weakly defined families
 __attribute__((weak))
 const target_family_descriptor_t g_nxp_kinetis_kseries = {0};
 __attribute__((weak))
@@ -57,22 +57,22 @@ const target_family_descriptor_t g_nxp_mimxrt = {0};
 __attribute__((weak))
 const target_family_descriptor_t g_nxp_rapid_iot = {0};
 __attribute__((weak))
-const target_family_descriptor_t  g_nordic_nrf51  = {0};
+const target_family_descriptor_t g_nordic_nrf51 = {0};
 __attribute__((weak))
-const target_family_descriptor_t  g_nordic_nrf52  = {0};
+const target_family_descriptor_t g_nordic_nrf52 = {0};
 __attribute__((weak))
-const target_family_descriptor_t g_realtek_rtl8195am  = {0};
+const target_family_descriptor_t g_realtek_rtl8195am = {0};
 __attribute__((weak))
-const target_family_descriptor_t g_ti_family  = {0};
+const target_family_descriptor_t g_ti_family = {0};
 __attribute__((weak))
-const target_family_descriptor_t g_wiznet_family  = {0};
+const target_family_descriptor_t g_wiznet_family = {0};
 __attribute__((weak))
-const target_family_descriptor_t g_renesas_family  = {0};
+const target_family_descriptor_t g_renesas_family = {0};
 __attribute__((weak))
-const target_family_descriptor_t g_toshiba_tz_family  = {0};
+const target_family_descriptor_t g_toshiba_tz_family = {0};
 
 __attribute__((weak))
-const target_family_descriptor_t *g_families[] = { 
+const target_family_descriptor_t *g_families[] = {
     &g_hw_reset_family,
     &g_sw_vectreset_family,
     &g_sw_sysresetreq_family,
@@ -89,8 +89,8 @@ const target_family_descriptor_t *g_families[] = {
     &g_wiznet_family,
     &g_renesas_family,
     &g_toshiba_tz_family,
-    0 // list terminator 
-}; 
+    0 // list terminator
+};
 
 __attribute__((weak))
 const target_family_descriptor_t *g_target_family = NULL;
@@ -100,10 +100,10 @@ void init_family(void)
 {
     uint8_t index = 0;
     uint16_t family_id = get_family_id();
-    if (g_target_family != NULL){ //already set
+    if (g_target_family != NULL) { //already set
         return;
     }
-    
+
     while (g_families[index]!=0) {
         if (g_families[index]->family_id && (g_families[index]->family_id == family_id)) {
             g_target_family = g_families[index];
@@ -111,8 +111,8 @@ void init_family(void)
         }
         index++;
     }
-    
-    if(g_target_family == NULL){ //default family
+
+    if (g_target_family == NULL) { //default family
         g_target_family = &g_hw_reset_family;
     }
 }
@@ -127,7 +127,7 @@ uint8_t target_set_state(TARGET_RESET_STATE state)
     if (g_board_info.target_set_state) { //target specific
         g_board_info.target_set_state(state);
     }
-    if (g_target_family) { 
+    if (g_target_family) {
         if (g_target_family->target_set_state) {
             //customize target state
             return g_target_family->target_set_state(state);
@@ -141,11 +141,11 @@ uint8_t target_set_state(TARGET_RESET_STATE state)
                     swd_set_soft_reset(g_target_family->soft_reset_type);
                 }
                 return swd_set_target_state_sw(state);
-            }else {
+            } else {
                 return 1;
-            } 
+            }
         }
-    }else{
+    } else {
         return 0;
     }
 }
@@ -154,7 +154,7 @@ void swd_set_target_reset(uint8_t asserted)
 {
     if (g_target_family && g_target_family->swd_set_target_reset) {
         g_target_family->swd_set_target_reset(asserted);
-    }else {
+    } else {
         (asserted) ? PIN_nRESET_OUT(0) : PIN_nRESET_OUT(1);
     }
 }
