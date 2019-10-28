@@ -1,7 +1,5 @@
 tool_specific:
     make_gcc_arm:
-        mcu:
-            - cortex-m0
         macros:
             -
         linker_file:
