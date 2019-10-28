@@ -1,0 +1,53 @@
+common:
+    target:
+        - mk64fn1m0xxx12 # Random device from Keilv4.
+    core:
+        - Cortex-M33
+    macros:
+        - INTERFACE_LPC55XX
+        - CPU_LPC55S69JBD100_cm33_core0
+        - DAPLINK_HIC_ID=0x97969920  # DAPLINK_HIC_ID_LPC55S69
+        - FLASH_SSD_CONFIG_ENABLE_FLEXNVM_SUPPORT=0
+        - FLASH_DRIVER_IS_FLASH_RESIDENT=1
+        - OS_CLOCK=96000000
+    includes:
+        - source/hic_hal/nxp/lpc55xx
+        - source/hic_hal/nxp/lpc55xx/LPC55S69
+        - projectfiles/uvision/lpc55xx_bl/build
+    sources:
+        hic_hal:
+            - source/hic_hal/nxp/lpc55xx
+            - source/hic_hal/nxp/lpc55xx/LPC55S69
+            - source/hic_hal/nxp/lpc55xx/armcc
+
+tool_specific:
+    uvision:
+        misc:
+            ld_flags:
+                - --predefine="-I../../../source/hic_hal/nxp/lpc55xx"
+            c_flags:
+                - --no_unaligned_access
+                - --diag_suppress=66 # disable warning about enums not fitting in signed 32-bit
+            cxx_flags:
+                - --no_unaligned_access
+            asm_flags:
+                - --no_unaligned_access
+    make_armcc:
+        misc:
+            ld_flags:
+                - --predefine="-Isource/hic_hal/nxp/lpc55xx"
+            c_flags:
+                - --no_unaligned_access
+                - --diag_suppress=66 # disable warning about enums not fitting in signed 32-bit
+            cxx_flags:
+                - --no_unaligned_access
+            asm_flags:
+                - --no_unaligned_access
+    make_gcc_arm:
+        linker_file:
+            - source/daplink/daplink.ld
+        includes:
+            - source/hic_hal/nxp/lpc55xx/gcc
+        sources:
+            hic_hal:
+                - source/hic_hal/nxp/lpc55xx/gcc
