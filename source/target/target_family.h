@@ -1,6 +1,6 @@
 /**
  * @file    target_family.h
- * @brief   
+ * @brief
  *
  * DAPLink Interface Firmware
  * Copyright (c) 2018-2019, ARM Limited, All Rights Reserved
@@ -26,13 +26,19 @@
 #include <string.h>
 #include "target_reset.h"
 
-#define VENDOR_TO_FAMILY(x, y) (x<<8 | y)
+//! @brief Generate a family ID from a vendor ID and family number.
+#define VENDOR_TO_FAMILY(vendor, family) (((vendor) << 8) | (family))
 
-typedef enum _reset_type { 
-    kHardwareReset=1, 
-    kSoftwareReset, 
-} reset_type_t; 
+//! @brief Reset type options.
+typedef enum _reset_type {
+    kHardwareReset = 1,
+    kSoftwareReset,
+} reset_type_t;
 
+//! @brief CMSIS Vendor IDs.
+//!
+//! These vendor IDs come from the CMSIS vendor ID table documented here:
+//! <https://arm-software.github.io/CMSIS_5/Pack/html/pdsc_family_pg.html#DeviceVendorEnum>
 enum _vendor_ids {
     kStub_VendorID = 0,
     kNXP_VendorID = 11,
@@ -44,6 +50,18 @@ enum _vendor_ids {
     kRealtek_VendorID = 124,
 };
 
+//! @brief Target family IDs.
+//!
+//! A family ID is a unique identifier for a compatible family from a single vendor. In this case,
+//! compatible specifically means that all devices from that family can share a
+//! target_family_descriptor_t struct.
+//!
+//! Several stub families, one for each of the standard reset types, are provided for cases where no
+//! special logic is needed to successfully connect to and program flash for the device.
+//!
+//! Family IDs are constructed by combining a vendor ID with a simple, incrementing family
+//! identifier number. There is no special meaning for the family number. To add a new family for a
+//! given vendor, just add 1 to the highest existing family number used with that vendor.
 typedef enum _family_id {
     kStub_HWReset_FamilyID = VENDOR_TO_FAMILY(kStub_VendorID, 1),
     kStub_SWVectReset_FamilyID = VENDOR_TO_FAMILY(kStub_VendorID, 2),
@@ -52,9 +70,7 @@ typedef enum _family_id {
     kNXP_KinetisL_FamilyID = VENDOR_TO_FAMILY(kNXP_VendorID, 2),
     kNXP_Mimxrt_FamilyID = VENDOR_TO_FAMILY(kNXP_VendorID, 3),
     kNXP_RapidIot_FamilyID = VENDOR_TO_FAMILY(kNXP_VendorID, 4),
-    kNXP_KinetisK32W_FamilyID = VENDOR_TO_FAMILY(kNXP_VendorID, 5),
-	  kNXP_KinetisK32L_FamilyID = VENDOR_TO_FAMILY(kNXP_VendorID, 6),
-    kNXP_KinetisV_FamilyID = VENDOR_TO_FAMILY(kNXP_VendorID, 7),
+    kNXP_KinetisK32_FamilyID = VENDOR_TO_FAMILY(kNXP_VendorID, 5),
     kNordic_Nrf51_FamilyID = VENDOR_TO_FAMILY(kNordic_VendorID, 1),
     kNordic_Nrf52_FamilyID = VENDOR_TO_FAMILY(kNordic_VendorID, 2),
     kRealtek_Rtl8195am_FamilyID = VENDOR_TO_FAMILY(kRealtek_VendorID, 1),
@@ -63,11 +79,15 @@ typedef enum _family_id {
     kWiznet_W7500_FamilyID = VENDOR_TO_FAMILY(kWiznet_VendorID, 1),
     kRenesas_FamilyID = VENDOR_TO_FAMILY(kRenesas_VendorID, 1),
 } family_id_t;
- 
-typedef struct target_family_descriptor { 
-    uint16_t family_id;                         /*!< Use to select or identify target family from defined target family or custom ones */ 
-    reset_type_t default_reset_type;            /*!< Target family can select predefined reset from  kHardwareReset and kSoftwareReset */ 
-    uint32_t soft_reset_type;                   /*!< Families can override software reset type to VECTRESET or SYSRESETREQ */
+
+//! @brief The family descriptor.
+//!
+//! The only members that must be set in a family descriptor are <i>family_id</i> and
+//! <i>default_reset_type</i>.
+typedef struct target_family_descriptor {
+    uint16_t family_id;                         /*!< Use to select or identify target family from defined target family or custom ones */
+    reset_type_t default_reset_type;            /*!< Target family can select predefined reset from #kHardwareReset and #kSoftwareReset */
+    uint32_t soft_reset_type;                   /*!< Families can override software reset type to #VECTRESET or #SYSRESETREQ */
     void (*target_before_init_debug)(void);     /*!< Target dependant function before debug initialization */
     void (*prerun_target_config)(void);         /*!< Target specific initialization */
     uint8_t (*target_unlock_sequence)(void);    /*!< Unlock targets that can enter lock state */

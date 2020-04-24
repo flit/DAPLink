@@ -275,6 +275,10 @@ projects:
         - *module_if
         - *module_hic_k26f
         - records/board/frdmk32w042.yaml
+    k26f_frdmk32l3a6_if:
+        - *module_if
+        - *module_hic_k26f
+        - records/board/frdmk32l3a6.yaml
     lpc11u35_ff1705_l151_if:
         - *module_if
         - *module_hic_lpc11u35
