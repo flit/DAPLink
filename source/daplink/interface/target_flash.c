@@ -61,7 +61,13 @@ static const flash_intf_t flash_intf = {
     target_flash_set,
 };
 
-extern const uint32_t my_second_flash_blob[];  // nxa07750
+#if defined(K3S_DEBUG)
+extern uint32_t my_second_flash_blob[];  // nxa07750
+extern uint32_t K32W0x2_P256_2KB_SEC_flash_prog_blob[];
+
+static uint8_t write_k3s_flash(uint32_t addr, uint8_t * data);
+#endif
+
 static state_t state = STATE_CLOSED;
 
 const flash_intf_t *const flash_intf_target = &flash_intf;
@@ -205,8 +211,11 @@ static error_t target_flash_uninit(void)
 
 static error_t target_flash_program_page(uint32_t addr, const uint8_t *buf, uint32_t size)
 {
+#if defined(K3S_DEBUG)
 	uint8_t targetAlgo = 0, flashAlgoBit = 0;	// nxa07750
-	uint32_t i, j; // nxa07750
+	uint32_t i, j, tmp32; // nxa07750
+    uint8_t writeBuf[8];
+#endif
     if (g_board_info.target_cfg) {
         error_t status = ERROR_SUCCESS;
         program_target_t * flash = current_flash_algo;
@@ -230,30 +239,72 @@ static error_t target_flash_program_page(uint32_t addr, const uint8_t *buf, uint
         
         while (size > 0) {
             uint32_t write_size = MIN(size, flash->program_buffer_size);
-
-            // Write page to buffer
-            if (!swd_write_memory(flash->program_buffer, (uint8_t *)buf, write_size)) {
-                return ERROR_ALGO_DATA_SEQ;
+#if defined(K3S_DEBUG)
+            if(addr < 0x01000000)
+            {
+#endif
+                // Write page to buffer
+                if (!swd_write_memory(flash->program_buffer, (uint8_t *)buf, write_size)) {
+                    return ERROR_ALGO_DATA_SEQ;
+                }
+                
+#if defined(K3S_DEBUG)
             }
+#endif
 						
+#if defined(K3S_DEBUG)
 						// nxa07750
-//						if(addr >= 0x01000000)
-//						{
-//							for(j=0; j<200; j++)
+						if(addr >= 0x01000000)
+						{
+                            j = 0;
+                            
+                            while(j < write_size){
+                                // First populate the write buffer array
+                                for(i=0; i<8; i++){
+                                    if(j >= write_size){
+                                        writeBuf[i] = 0;
+                                    }
+                                    else{
+                                        writeBuf[i] = buf[j];
+                                    }
+                                    j++;
+                                }
+                                
+                                // Now write to the K3S flash
+                                // Address increment is j-8 because j is essentially pre-incremented to keep 
+                                // up with the bytes that are being written.  
+                                if(!write_k3s_flash((addr + j - 8), writeBuf)){
+                                    return ERROR_WRITE;
+                                }
+                            }
+                            // Uncomment this to verify flash algorithm was written correctly
+							//for(j=0; j<200; j++)
+//							for(j=0; j<(856*4); j++)
 //							{
 //								if(!swd_read_memory(0x20000000+j, &targetAlgo, 1))
 //								{
 //									return ERROR_ALGO_DATA_SEQ;
 //								}
 //							
-//								flashAlgoBit = (my_second_flash_blob[j/4] & (1<<(j%4)));
+////								flashAlgoBit = (my_second_flash_blob[j/4] & (0xFF << ((j%4)*8)));
+//								//tmp32 = my_second_flash_blob[j/4];
+//								//tmp32 = *((uint32_t *)my_second_flash_blob);
+//								tmp32 = K32W0x2_P256_2KB_SEC_flash_prog_blob[j/4];
+//								flashAlgoBit = (tmp32 & (0xFF << ((j%4)*8))) >> ((j%4)*8);
 //								if(targetAlgo != flashAlgoBit)
 //								{
-//									return ERROR_ALGO_DATA_SEQ;
+//									//return ERROR_ALGO_DATA_SEQ;
+//                                    if(!swd_write_byte(0x20000000+j, flashAlgoBit))
+//                                    {
+//                                        return ERROR_ALGO_DATA_SEQ;
+//                                    }
 //								}
 //							
 //							}
-//						} // nxa07750
+						} // nxa07750
+                        else
+                        {
+                        #endif
 
             // Run flash programming
             if (!swd_flash_syscall_exec(&flash->sys_call_s,
@@ -264,6 +315,10 @@ static error_t target_flash_program_page(uint32_t addr, const uint8_t *buf, uint
                                         0)) {
                 return ERROR_WRITE;
             }
+                                        
+#if defined (K3S_DEBUG)
+        }
+#endif
 
             if (config_get_automation_allowed()) {
                 // Verify data flashed if in automation mode
@@ -409,5 +464,57 @@ static uint32_t target_flash_erase_sector_size(uint32_t addr)
 
 static uint8_t target_flash_busy(void){
     return (state == STATE_OPEN);
+}
+#endif
+
+#if defined(K3S_DEBUG)
+static uint8_t write_k3s_flash(uint32_t addr, uint8_t * data)
+{
+    uint8_t statVal = 0;
+    
+    // put code here
+    // First write STAT register
+    if(!swd_write_byte(0x40023000, 0x70))
+    {
+        return 0;
+    }
+    
+    // Next write CCOB registers
+    swd_write_byte(0x40023007, 0x07);                               // FCCOB 0
+    swd_write_byte(0x40023006, (((addr & 0xFF0000) >> 16) | 0x80)); // FCCOB 1:  ADD[23:16]
+    swd_write_byte(0x40023005, ((addr & 0xFF00) >> 8));             // FCCOB 2   ADD[15:8]
+    swd_write_byte(0x40023004, ((addr & 0xFF) >> 0));               // FCCOB 3   ADD[7:0]
+    
+    // Next write CCOB registers
+    swd_write_byte(0x4002300B, data[3]); // FCCOB 4
+    swd_write_byte(0x4002300A, data[2]); // FCCOB 5
+    swd_write_byte(0x40023009, data[1]); // FCCOB 6  
+    swd_write_byte(0x40023008, data[0]); // FCCOB 7   
+    
+    swd_write_byte(0x4002300F, data[7]); // FCCOB 8
+    swd_write_byte(0x4002300E, data[6]); // FCCOB 9
+    swd_write_byte(0x4002300D, data[5]); // FCCOB A
+    swd_write_byte(0x4002300C, data[4]); // FCCOB B
+    
+    // Now launch the command
+    swd_write_byte(0x40023000, 0x80);
+    
+    // Wait for the command to finish
+    while(!statVal)
+    {
+        swd_read_byte(0x40023000, &statVal);
+    }
+    
+    // Read STAT register again
+    swd_read_byte(0x40023000, &statVal);
+    
+    // Check for errors
+    if(statVal & 0x70)
+    {
+        // had an error
+        return 0;
+    }
+    
+    return 1;
 }
 #endif

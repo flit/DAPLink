@@ -54,6 +54,7 @@ typedef enum _family_id {
     kNXP_RapidIot_FamilyID = VENDOR_TO_FAMILY(kNXP_VendorID, 4),
     kNXP_KinetisK32W_FamilyID = VENDOR_TO_FAMILY(kNXP_VendorID, 5),
 	  kNXP_KinetisK32L_FamilyID = VENDOR_TO_FAMILY(kNXP_VendorID, 6),
+    kNXP_KinetisV_FamilyID = VENDOR_TO_FAMILY(kNXP_VendorID, 7),
     kNordic_Nrf51_FamilyID = VENDOR_TO_FAMILY(kNordic_VendorID, 1),
     kNordic_Nrf52_FamilyID = VENDOR_TO_FAMILY(kNordic_VendorID, 2),
     kRealtek_Rtl8195am_FamilyID = VENDOR_TO_FAMILY(kRealtek_VendorID, 1),
