@@ -36,6 +36,8 @@
 #include "DAP.h"
 #include "info.h"
 
+#include "debug_cm.h"
+
 #define DAP_FW_VER      "1.10"  // Firmware Version
 
 
@@ -659,6 +661,9 @@ static uint32_t DAP_SWD_Transfer(const uint8_t *request, uint8_t *response) {
   uint32_t  match_retry;
   uint32_t  retry;
   uint32_t  data;
+#if(DBG_KV58F22)
+	uint32_t  dp_select = 0;
+#endif
 
   request_head   = request;
 
@@ -779,6 +784,23 @@ static uint32_t DAP_SWD_Transfer(const uint8_t *request, uint8_t *response) {
              (*(request+2) << 16) |
              (*(request+3) << 24);
       request += 4;
+#if(DBG_KV58F22)			
+      // Check for write to DP SELECT register
+      if (!(request_value & DAP_TRANSFER_APnDP)
+           && ((request_value & (DAP_TRANSFER_A2|DAP_TRANSFER_A3)) == DP_SELECT))
+      {
+        dp_select = data;
+      }
+			
+      // Check for write to AP CSW register.
+      else if ((request_value & DAP_TRANSFER_APnDP)
+            && ((request_value & (DAP_TRANSFER_A2|DAP_TRANSFER_A3)) == AP_CSW)
+            && ((dp_select & APSEL) == 0)
+            && ((dp_select & APBANKSEL) == 0))
+      {
+        data = (data & 0x00ffffff) | 0x43000000;
+      }
+#endif
       if (request_value & DAP_TRANSFER_MATCH_MASK) {
         // Write match mask
         DAP_Data.transfer.match_mask = data;

@@ -34,13 +34,13 @@ typedef enum {
     ERROR_INTERNAL,
 
     /* VFS user errors */
-    ERROR_ERROR_DURING_TRANSFER,
+    ERROR_ERROR_DURING_TRANSFER,    // 0x3
     ERROR_TRANSFER_TIMEOUT,
     ERROR_FILE_BOUNDS,
     ERROR_OOO_SECTOR,
 
     /* Target flash errors */
-    ERROR_RESET,
+    ERROR_RESET,                    // 0x7
     ERROR_ALGO_DL,
     ERROR_ALGO_MISSING,
     ERROR_ALGO_DATA_SEQ,
@@ -48,7 +48,7 @@ typedef enum {
     ERROR_UNINIT,
     ERROR_SECURITY_BITS,
     ERROR_UNLOCK,
-    ERROR_ERASE_SECTOR,
+    ERROR_ERASE_SECTOR,             // 0xF
     ERROR_ERASE_ALL,
     ERROR_WRITE,
     ERROR_WRITE_VERIFY,

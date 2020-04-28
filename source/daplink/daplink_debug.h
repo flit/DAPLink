@@ -35,7 +35,7 @@ extern "C" {
 #endif
 
 #ifndef MSC_DEBUG
-//#define MSC_DEBUG
+#define MSC_DEBUG
 #endif
 
 #if defined (MSC_DEBUG)

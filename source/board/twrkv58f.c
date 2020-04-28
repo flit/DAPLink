@@ -24,7 +24,7 @@
 
 const board_info_t g_board_info = {
     .infoVersion = 0x0,
-    .board_id = "0240",
+    .board_id = "0330",
     .family_id = kNXP_KinetisV_FamilyID,
     .flags = kEnablePageErase,
     .target_cfg = &target_device,
