@@ -138,7 +138,7 @@ error_t flash_manager_data(uint32_t addr, const uint8_t *data, uint32_t size)
     }
     
     //non-increasing address support
-    if (ROUND_DOWN(addr, current_write_block_size) != ROUND_DOWN(last_addr, current_write_block_size)) {    
+    if (ROUND_DOWN(addr, current_write_block_size) != ROUND_DOWN(last_addr, current_write_block_size)) {  
         status = flush_current_block(addr);
         if (ERROR_SUCCESS != status) {
             state = STATE_ERROR;
@@ -169,8 +169,16 @@ error_t flash_manager_data(uint32_t addr, const uint8_t *data, uint32_t size)
             break;
         }
 
+        if(addr == 0x10000380)
+        {
+            flash_manager_printf("flash_manager_data(addr=0x%x size=0x%x), addr check 1\r\n", addr, size);
+        }
         // Change sector if necessary
         if (addr >= current_sector_addr + current_sector_size) {
+            if(addr == 0x10000380)
+            {
+                flash_manager_printf("flash_manager_data(addr=0x%x size=0x%x), addr check 2\r\n", addr, size);
+            }   
             status = setup_next_sector(addr);
 
             if (ERROR_SUCCESS != status) {
