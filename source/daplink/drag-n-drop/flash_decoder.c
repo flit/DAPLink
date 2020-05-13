@@ -32,7 +32,7 @@
 #include "target_board.h"
 
 // Set to 1 to enable debugging
-#define DEBUG_FLASH_DECODER     1
+#define DEBUG_FLASH_DECODER     0
 
 #if DEBUG_FLASH_DECODER
 #include "daplink_debug.h"

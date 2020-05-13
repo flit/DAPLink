@@ -32,6 +32,6 @@ target_cfg_t target_device = {
     .flash_regions[0].end           = 0x10100000,
     .flash_regions[0].flags         = kRegionIsDefault,
     .flash_regions[0].flash_algo    = (program_target_t *) &flash,    
-    .ram_regions[0].start           = 0x00000000,
-    .ram_regions[0].end             = 0x10000,
+    .ram_regions[0].start           = 0x20000000,
+    .ram_regions[0].end             = 0x2000,
 };

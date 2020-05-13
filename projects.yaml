@@ -243,6 +243,10 @@ projects:
         - *module_if
         - *module_hic_k20dx
         - records/board/twrke18f.yaml
+	k20dx_twrkv58f220m_if:
+        - *module_if
+        - *module_hic_k20dx
+        - records/board/twrk58f220m.yaml
     k20dx_hvpke18f_if:
         - *module_if
         - *module_hic_k20dx
