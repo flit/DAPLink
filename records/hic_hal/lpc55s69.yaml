@@ -9,7 +9,7 @@ common:
         - DAPLINK_HIC_ID=0x4C504355  # DAPLINK_HIC_ID_LPC55XX
         - FLASH_SSD_CONFIG_ENABLE_FLEXNVM_SUPPORT=0
         - FLASH_DRIVER_IS_FLASH_RESIDENT=1
-        - OS_CLOCK=96000000
+        - OS_CLOCK=150000000
     includes:
         - source/hic_hal/nxp/lpc55xx
         - source/hic_hal/nxp/lpc55xx/LPC55S69
