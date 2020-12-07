@@ -53,8 +53,13 @@ typedef struct __EP {
     uint32_t maxPacket;
 } EP;
 
+#ifdef LPC55_FIXME
 EPQH __align(2048) EPQHx[(USBD_EP_NUM + 1) * 2];
 dTD  __align(32) dTDx[(USBD_EP_NUM + 1) * 2];
+#else
+EPQH EPQHx[(USBD_EP_NUM + 1) * 2];
+dTD  dTDx[(USBD_EP_NUM + 1) * 2];
+#endif
 
 EP Ep[(USBD_EP_NUM + 1) * 2];
 uint32_t BufUsed;
@@ -73,7 +78,11 @@ uint32_t cmpl_pnd;
 uint8_t __align(4096) EPBufPool[EP_BUF_POOL_SIZE]
 #else
 /* supported classes are used */
+#ifdef LPC55_FIXME
 uint8_t __align(4096) EPBufPool[
+#else
+uint8_t EPBufPool[
+#endif
     USBD_MAX_PACKET0                                                                                                     * 2 +
     USBD_HID_ENABLE     *  (HS(USBD_HID_HS_ENABLE)      ? USBD_HID_HS_WMAXPACKETSIZE     : USBD_HID_WMAXPACKETSIZE)      * 2 +
     USBD_MSC_ENABLE     *  (HS(USBD_MSC_HS_ENABLE)      ? USBD_MSC_HS_WMAXPACKETSIZE     : USBD_MSC_WMAXPACKETSIZE)      * 2 +
@@ -101,12 +110,13 @@ void __SVC_1(int ena)
 void USBD_Intr(int ena)
 {
 #endif
-
+#ifdef LPC55_FIXME
     if (ena) {
         NVIC_EnableIRQ(USBHS_IRQn);          /* Enable USB interrupt */
     } else {
         NVIC_DisableIRQ(USBHS_IRQn);         /* Disable USB interrupt */
     }
+#endif
 }
 
 
@@ -118,6 +128,7 @@ void USBD_Intr(int ena)
 
 void USBD_Init(void)
 {
+#ifdef LPC55_FIXME
     USBD_Intr(0);
 
     hic_enable_usb_clocks();
@@ -148,6 +159,7 @@ void USBD_Init(void)
 #endif
     USBD_Reset();
     USBD_Intr(1);
+#endif
 }
 
 
@@ -158,13 +170,19 @@ void USBD_Init(void)
  *    Return Value:    None
  */
 
+#ifdef LPC55_FIXME
 void USBD_Connect(uint32_t con)
+#else
+void USBD_Connect(BOOL con)
+#endif
 {
+#ifdef LPC55_FIXME
     if (con) {
         USBHS->USBCMD |= 1;            /* run */
     } else {
         USBHS->USBCMD &= ~1;           /* stop */
     }
+#endif
 }
 
 
@@ -176,6 +194,7 @@ void USBD_Connect(uint32_t con)
 
 void USBD_Reset(void)
 {
+#ifdef LPC55_FIXME
     uint32_t i;
     uint8_t *ptr;
     cmpl_pnd = 0;
@@ -236,6 +255,7 @@ void USBD_Reset(void)
     USBHS->USBMODE |= (1UL << 3);    /* Setup lockouts off */
     USBHS->EPCR0 = 0x00C000C0;
     USBD_PrimeEp(0, Ep[EP_OUT_IDX(0)].maxPacket);
+#endif
 }
 
 
@@ -271,7 +291,9 @@ void USBD_Resume(void)
 
 void USBD_WakeUp(void)
 {
-    USBHS->PORTSC1 |= (1UL << 6);
+#ifdef LPC55_FIXME
+   USBHS->PORTSC1 |= (1UL << 6);
+#endif
 }
 
 
@@ -281,7 +303,11 @@ void USBD_WakeUp(void)
  *    Return Value:    None
  */
 
+#ifdef LPC55_FIXME
 void USBD_WakeUpCfg(uint32_t cfg)
+#else
+void USBD_WakeUpCfg(BOOL cfg)
+#endif
 {
     /* Not needed */
 }
@@ -295,10 +321,12 @@ void USBD_WakeUpCfg(uint32_t cfg)
 
 void USBD_SetAddress(uint32_t adr, uint32_t setup)
 {
+#ifdef LPC55_FIXME
     if (setup == 0) {
         USBHS->DEVICEADDR  = (adr << 25);
         USBHS->DEVICEADDR |= (1UL << 24);
     }
+#endif
 }
 
 
@@ -307,8 +335,11 @@ void USBD_SetAddress(uint32_t adr, uint32_t setup)
  *    Parameters:      cfg:   Device Configure/Deconfigure
  *    Return Value:    None
  */
-
+#ifdef LPC55_FIXME
 void USBD_Configure(uint32_t cfg)
+#else
+void USBD_Configure(BOOL cfg)
+#endif
 {
     uint32_t i;
 
@@ -331,6 +362,7 @@ void USBD_Configure(uint32_t cfg)
 
 void USBD_ConfigEP(USB_ENDPOINT_DESCRIPTOR *pEPD)
 {
+#ifdef LPC55_FIXME
     uint32_t num, val, type, idx;
 
     if ((pEPD->bEndpointAddress & USB_ENDPOINT_DIRECTION_MASK)) {
@@ -364,6 +396,7 @@ void USBD_ConfigEP(USB_ENDPOINT_DESCRIPTOR *pEPD)
     ENDPTCTRL(num)  &= ~(0xFFFF << val);
     ENDPTCTRL(num)  |= ((type << 2) << val) |
                        ((1UL  << 6) << val);   /* Data toogle reset */
+#endif
 }
 
 
@@ -389,12 +422,14 @@ void USBD_DirCtrlEP(uint32_t dir)
 
 void USBD_EnableEP(uint32_t EPNum)
 {
+#ifdef LPC55_FIXME
     if (EPNum & 0x80) {
         EPNum &= 0x7F;
         ENDPTCTRL(EPNum) |= (1UL << 23);    /* EP enabled */
     } else {
         ENDPTCTRL(EPNum) |= (1UL << 7);     /* EP enabled */
     }
+#endif
 }
 
 
@@ -408,12 +443,14 @@ void USBD_EnableEP(uint32_t EPNum)
 
 void USBD_DisableEP(uint32_t EPNum)
 {
+#ifdef LPC55_FIXME
     if (EPNum & 0x80) {
         EPNum &= 0x7F;
         ENDPTCTRL(EPNum) &= ~(1UL << 23);   /* EP disabled */
     } else {
         ENDPTCTRL(EPNum)     &= ~(1UL << 7); /* EP disabled */
     }
+#endif
 }
 
 
@@ -427,6 +464,7 @@ void USBD_DisableEP(uint32_t EPNum)
 
 void USBD_ResetEP(uint32_t EPNum)
 {
+#ifdef LPC55_FIXME
     if (EPNum & 0x80) {
         EPNum &= 0x7F;
         EPQHx[EP_IN_IDX(EPNum)].dTD_token &= 0xC0;
@@ -445,6 +483,7 @@ void USBD_ResetEP(uint32_t EPNum)
         ENDPTCTRL(EPNum) |= (1UL << 6);     /* data toggle reset */
         USBD_PrimeEp(EPNum, Ep[EP_OUT_IDX(EPNum)].maxPacket);
     }
+#endif
 }
 
 
@@ -458,12 +497,14 @@ void USBD_ResetEP(uint32_t EPNum)
 
 void USBD_SetStallEP(uint32_t EPNum)
 {
+#ifdef LPC55_FIXME
     if (EPNum & 0x80) {
         EPNum &= 0x7F;
         ENDPTCTRL(EPNum) |= (1UL << 16);    /* IN endpoint stall */
     } else {
         ENDPTCTRL(EPNum) |= (1UL << 0);     /* OUT endpoint stall */
     }
+#endif
 }
 
 
@@ -477,6 +518,7 @@ void USBD_SetStallEP(uint32_t EPNum)
 
 void USBD_ClrStallEP(uint32_t EPNum)
 {
+#ifdef LPC55_FIXME
     if (EPNum & 0x80) {
         EPNum &= 0x7F;
         ENDPTCTRL(EPNum) &= ~(1UL << 16);   /* clear stall */
@@ -490,6 +532,7 @@ void USBD_ClrStallEP(uint32_t EPNum)
         ENDPTCTRL(EPNum) &= ~(1UL << 0);    /* clear stall */
         ENDPTCTRL(EPNum) |= (1UL << 6);     /* data toggle reset */
     }
+#endif
 }
 
 
@@ -517,6 +560,7 @@ void USBD_ClearEPBuf(uint32_t EPNum)
 
 void USBD_PrimeEp(uint32_t EPNum, uint32_t cnt)
 {
+#ifdef LPC55_FIXME
     uint32_t idx, val;
 
     /* IN endpoint */
@@ -558,6 +602,7 @@ void USBD_PrimeEp(uint32_t EPNum, uint32_t cnt)
     USBHS->EPPRIME = (val);
 
     while ((USBHS->EPPRIME & val));
+#endif
 }
 
 
@@ -572,6 +617,7 @@ void USBD_PrimeEp(uint32_t EPNum, uint32_t cnt)
 
 uint32_t USBD_ReadEP(uint32_t EPNum, uint8_t *pData, uint32_t size)
 {
+#ifdef LPC55_FIXME
     uint32_t cnt  = 0;
     uint32_t i;
 
@@ -615,6 +661,9 @@ uint32_t USBD_ReadEP(uint32_t EPNum, uint8_t *pData, uint32_t size)
     }
 
     return (cnt);
+#else
+    return 0;
+#endif
 }
 
 
@@ -650,7 +699,11 @@ uint32_t USBD_WriteEP(uint32_t EPNum, uint8_t *pData, uint32_t cnt)
 
 uint32_t USBD_GetFrame(void)
 {
-    return ((USBHS->FRINDEX >> 3) & 0x0FFF);
+ #ifdef LPC55_FIXME
+   return ((USBHS->FRINDEX >> 3) & 0x0FFF);
+#else
+    return 0;
+#endif
 }
 
 
@@ -675,8 +728,10 @@ uint32_t USBD_GetError(void)
  */
 void USBHS_IRQHandler(void)
 {
+#ifdef LPC55_FIXME
     NVIC_DisableIRQ(USBHS_IRQn);
     USBD_SignalHandler();
+#endif
 }
 
 /*
@@ -685,6 +740,7 @@ void USBHS_IRQHandler(void)
 
 void USBD_Handler(void)
 {
+#ifdef LPC55_FIXME
     uint32_t sts, cmpl, num;
     sts  = USBHS->USBSTS & USBHS->USBINTR;
     cmpl = USBHS->EPCOMPLETE;
@@ -889,4 +945,5 @@ void USBD_Handler(void)
     }
 
     NVIC_EnableIRQ(USBHS_IRQn);
+#endif
 }

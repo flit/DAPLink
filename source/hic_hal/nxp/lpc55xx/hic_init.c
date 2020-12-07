@@ -45,6 +45,7 @@ static void fll_delay(void)
 // This IRQ handler will be invoked if VDD falls below the trip point.
 void LVD_LVW_IRQHandler(void)
 {
+#ifdef LPC55_FIXME
     if (PMC->LVDSC1 & PMC_LVDSC1_LVDF_MASK)
     {
         util_assert(false && "low voltage detect tripped");
@@ -55,6 +56,7 @@ void LVD_LVW_IRQHandler(void)
         util_assert(false && "low voltage warning tripped");
         PMC->LVDSC2 |= PMC_LVDSC2_LVWACK_MASK;
     }
+#endif
 }
 
 //! - MPU is disabled and gated.
@@ -63,6 +65,7 @@ void LVD_LVW_IRQHandler(void)
 //! - Disable USB current limiter so the voltage doesn't drop as we enable high speed clocks.
 void sdk_init(void)
 {
+#ifdef LPC55_FIXME
     CLOCK_SetXtal0Freq(16000000U); // 16 MHz crystal
     CLOCK_SetXtal32Freq(0);
 
@@ -81,10 +84,11 @@ void sdk_init(void)
     PMC->LVDSC1 = PMC_LVDSC1_LVDIE_MASK | PMC_LVDSC1_LVDV(0); // low trip point
     PMC->LVDSC2 |= PMC_LVDSC2_LVWACK_MASK;
     PMC->LVDSC2 = PMC_LVDSC2_LVWIE_MASK | PMC_LVDSC2_LVWV(0); // low trip point
-//     NVIC_EnableIRQ(LVD_LVW_IRQn);
+    // NVIC_EnableIRQ(LVD_LVW_IRQn);
 
     // Disable USB inrush current limiter.
     SIM->USBPHYCTL |= SIM_USBPHYCTL_USBDISILIM_MASK;
+#endif
 }
 
 //! - Turn on 16MHz crystal oscillator.
@@ -95,6 +99,7 @@ void sdk_init(void)
 //! - Configure the USB PHY.
 void hic_enable_usb_clocks(void)
 {
+#ifdef LPC55_FIXME
     // Enable external oscillator and 32kHz IRC.
     MCG->C1 |= MCG_C1_IRCLKEN_MASK; // Select 32k IR.
     // Delay at least 100µs for 32kHz IRQ to stabilize.
@@ -129,7 +134,7 @@ void hic_enable_usb_clocks(void)
     // Enable USB clock source and init phy. This turns on the 480MHz PLL.
     CLOCK_EnableUsbhs0Clock(kCLOCK_UsbSrcPll0, CLOCK_GetFreq(kCLOCK_PllFllSelClk));
     USB_EhciPhyInit(0, CPU_XTAL_CLK_HZ);
-
+#endif
     SystemCoreClockUpdate();
 }
 
@@ -139,6 +144,7 @@ void hic_power_target(void)
     // to prevent the target from effecting the state
     // of the reset line / reset button
     if (!daplink_is_bootloader()) {
+#ifdef LPC55_FIXME
         // configure pin as GPIO
         PIN_POWER_EN_PORT->PCR[PIN_POWER_EN_BIT] = PORT_PCR_MUX(1);
         // force always on logic 1
@@ -152,5 +158,6 @@ void hic_power_target(void)
         // button is pressed.
         // Note: With optimization set to -O2 the value 5115 delays for ~1ms @ 20.9Mhz core
         busy_wait(5115 * 50);
+#endif
     }
 }

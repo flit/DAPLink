@@ -28,8 +28,8 @@
 #include "circ_buf.h"
 #include "settings.h" // for config_get_overflow_detect
 
-#define UART_INSTANCE (UART0)
-#define UART_IRQ (UART0_RX_TX_IRQn)
+#define UART_INSTANCE (USART0)
+#define UART_IRQ (FLEXCOMM0_IRQn)
 
 extern uint32_t SystemCoreClock;
 
@@ -47,13 +47,16 @@ uint8_t read_buffer_data[BUFFER_SIZE];
 
 void clear_buffers(void)
 {
+#ifdef LPC55_FIXME
     util_assert(!(UART_INSTANCE->C2 & UART_C2_TIE_MASK));
+#endif
     circ_buf_init(&write_buffer, write_buffer_data, sizeof(write_buffer_data));
     circ_buf_init(&read_buffer, read_buffer_data, sizeof(read_buffer_data));
 }
 
 int32_t uart_initialize(void)
 {
+#ifdef LPC55_FIXME
     NVIC_DisableIRQ(UART_IRQ);
     // enable clk PORTC
     SIM->SCGC5 |= SIM_SCGC5_PORTB_MASK;
@@ -80,22 +83,25 @@ int32_t uart_initialize(void)
     UART_INSTANCE->C2 |= UART_C2_RIE_MASK;
     NVIC_ClearPendingIRQ(UART_IRQ);
     NVIC_EnableIRQ(UART_IRQ);
-
+#endif
     return 1;
 }
 
 int32_t uart_uninitialize(void)
 {
+ #ifdef LPC55_FIXME
     // transmitter and receiver disabled
     UART_INSTANCE->C2 &= ~(UART_C2_RE_MASK | UART_C2_TE_MASK);
     // disable interrupt
     UART_INSTANCE->C2 &= ~(UART_C2_RIE_MASK | UART_C2_TIE_MASK);
     clear_buffers();
+#endif
     return 1;
 }
 
 int32_t uart_reset(void)
 {
+#ifdef LPC55_FIXME
     // disable interrupt
     NVIC_DisableIRQ(UART_IRQ);
     // disable TIE interrupt
@@ -103,11 +109,13 @@ int32_t uart_reset(void)
     clear_buffers();
     // enable interrupt
     NVIC_EnableIRQ(UART_IRQ);
+#endif
     return 1;
 }
 
 int32_t uart_set_configuration(UART_Configuration *config)
 {
+#ifdef LPC55_FIXME
     uint8_t data_bits = 8;
     uint8_t parity_enable = 0;
     uint8_t parity_type = 0;
@@ -157,6 +165,7 @@ int32_t uart_set_configuration(UART_Configuration *config)
     NVIC_ClearPendingIRQ(UART_IRQ);
     NVIC_EnableIRQ(UART_IRQ);
     UART_INSTANCE->C2 |= UART_C2_RIE_MASK;
+#endif
     return 1;
 }
 
@@ -172,6 +181,7 @@ int32_t uart_write_free(void)
 
 int32_t uart_write_data(uint8_t *data, uint16_t size)
 {
+#ifdef LPC55_FIXME
     cortex_int_state_t state;
     uint32_t cnt;
 
@@ -185,6 +195,9 @@ int32_t uart_write_data(uint8_t *data, uint16_t size)
     cortex_int_restore(state);
 
     return cnt;
+#else 
+    return 0;
+#endif
 }
 
 int32_t uart_read_data(uint8_t *data, uint16_t size)
@@ -194,6 +207,7 @@ int32_t uart_read_data(uint8_t *data, uint16_t size)
 
 void UART0_RX_TX_IRQHandler(void)
 {
+#ifdef LPC55_FIXME
     uint32_t s1;
     volatile uint8_t errorData;
     // read interrupt status
@@ -239,4 +253,5 @@ void UART0_RX_TX_IRQHandler(void)
             }
         }
     }
+#endif
 }
