@@ -1,9 +1,6 @@
 /**
- * @file    daplink_addr.h
- * @brief
- *
  * DAPLink Interface Firmware
- * Copyright (c) 2019, ARM Limited, All Rights Reserved
+ * Copyright (c) 2020, Arm Limited
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -24,38 +21,42 @@
 
 /* Device sizes */
 
-#define DAPLINK_ROM_START               0x00000000
-#define DAPLINK_ROM_SIZE                0x00040000 // Intentionally set to only 256 kB of total 640 kB.
+#define DAPLINK_ROM_START               0x10000000 // S alias
+#define DAPLINK_ROM_SIZE                0x0009d800 // 640 kB - 17 reserved pages = 630 kB
 
-#define DAPLINK_RAM_START               0x20000000
-#define DAPLINK_RAM_SIZE                0x00044000 // 272 kB RAM
+#define DAPLINK_RAM_START               0x30000000 // S alias
+#define DAPLINK_RAM_SIZE                0x00040000 // SRAM 0-3
 
 /* ROM sizes */
 
-#define DAPLINK_ROM_BL_START            0x00000000
+#define DAPLINK_ROM_BL_START            0x10000000
 #define DAPLINK_ROM_BL_SIZE             0x00010000 // 64 kB bootloader
 
-#define DAPLINK_ROM_CONFIG_ADMIN_START  0x00010000
+#define DAPLINK_ROM_CONFIG_ADMIN_START  0x10010000
 #define DAPLINK_ROM_CONFIG_ADMIN_SIZE   0x00000000
 
-#define DAPLINK_ROM_IF_START            0x00010000
-#define DAPLINK_ROM_IF_SIZE             0x0002f000 // 192 kB interface
+#define DAPLINK_ROM_IF_START            0x10010000
+#define DAPLINK_ROM_IF_SIZE             0x0008c800
 
-#define DAPLINK_ROM_CONFIG_USER_START   0x0003f000
-#define DAPLINK_ROM_CONFIG_USER_SIZE    0x00001000 // 4 kB user config
+#define DAPLINK_ROM_CONFIG_USER_START   0x1009c800
+#define DAPLINK_ROM_CONFIG_USER_SIZE    0x00001000
 
 /* RAM sizes */
 
-#define DAPLINK_RAM_APP_START           0x20000000
-#define DAPLINK_RAM_APP_SIZE            0x00043f00
+#define DAPLINK_RAM_APP_START           0x30000000
+#define DAPLINK_RAM_APP_SIZE            0x0003FF00
 
-#define DAPLINK_RAM_SHARED_START        0x20043f00
+#define DAPLINK_RAM_SHARED_START        0x3003FF00
 #define DAPLINK_RAM_SHARED_SIZE         0x00000100
 
 /* Flash Programming Info */
 
-#define DAPLINK_SECTOR_SIZE             0x00008000
-#define DAPLINK_MIN_WRITE_SIZE          0x00000010
+#define DAPLINK_SECTOR_SIZE             0x00000200
+#define DAPLINK_MIN_WRITE_SIZE          0x00000200
+
+/* USB RAM */
+#define DAPLINK_USB_RAM_START           0x40100000
+#define DAPLINK_USB_RAM_SIZE            0x00004000
 
 /* Current build */
 
