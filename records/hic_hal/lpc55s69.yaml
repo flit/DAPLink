@@ -1,6 +1,7 @@
 common:
     target:
-        - mk64fn1m0xxx12 # Random device from Keilv4.
+        - mk64fn1m0xxx12 # Random device from Keilv4.        
+        # - lpc55s69
     core:
         - Cortex-M33
     macros:
@@ -18,7 +19,6 @@ common:
         hic_hal:
             - source/hic_hal/nxp/lpc55xx
             - source/hic_hal/nxp/lpc55xx/LPC55S69
-            - source/hic_hal/nxp/lpc55xx/armcc
 
 tool_specific:
     uvision:
@@ -43,7 +43,13 @@ tool_specific:
                 - --no_unaligned_access
             asm_flags:
                 - --no_unaligned_access
+        sources:
+            hic_hal:
+                - source/hic_hal/nxp/lpc55xx/armcc
     make_gcc_arm:
+        misc:
+            c_flags:
+                - -march=armv8-m.main+dsp
         linker_file:
             - source/daplink/daplink.ld
         includes:

@@ -23,7 +23,6 @@
 #include "fsl_device_registers.h"
 #include "DAP_config.h"
 #include "gpio.h"
-#include "target_reset.h"
 #include "daplink.h"
 #include "hic_init.h"
 #include "fsl_clock.h"
@@ -44,6 +43,7 @@ void gpio_init(void)
 #if  defined(DAPLINK_IF)
     SCB->CCR |= SCB_CCR_UNALIGN_TRP_Msk;
 #endif
+#ifdef LPC55_FIXME
     // enable clock to ports
     SIM->SCGC5 |= SIM_SCGC5_PORTA_MASK | SIM_SCGC5_PORTB_MASK | SIM_SCGC5_PORTC_MASK | SIM_SCGC5_PORTD_MASK | SIM_SCGC5_PORTE_MASK;
     SIM->SCGC6 |= SIM_SCGC6_DMAMUX_MASK;
@@ -89,10 +89,12 @@ void gpio_init(void)
     // button is pressed.
     // Note: With optimization set to -O2 the value 1000000 delays for ~85ms
     busy_wait(1000000);
+#endif
 }
 
 void gpio_set_board_power(bool powerEnabled)
 {
+#ifdef LPC55_FIXME
     if (powerEnabled) {
         // enable power switch
         PIN_POWER_EN_GPIO->PSOR = PIN_POWER_EN;
@@ -101,6 +103,7 @@ void gpio_set_board_power(bool powerEnabled)
         // disable power switch
         PIN_POWER_EN_GPIO->PCOR = PIN_POWER_EN;
     }
+#endif
 }
 
 uint32_t UART1_GetFreq(void)
@@ -122,11 +125,13 @@ void UART1_DeinitPins(void)
 
 void gpio_set_hid_led(gpio_led_state_t state)
 {
+#ifdef LPC55_FIXME
     if (state) {
         LED_CONNECTED_GPIO->PCOR = LED_CONNECTED; // LED on
     } else {
         LED_CONNECTED_GPIO->PSOR = LED_CONNECTED; // LED off
     }
+#endif
 }
 
 void gpio_set_cdc_led(gpio_led_state_t state)
@@ -141,7 +146,11 @@ void gpio_set_msc_led(gpio_led_state_t state)
 
 uint8_t gpio_get_reset_btn_no_fwrd(void)
 {
+#ifdef LPC55_FIXME
     return (PIN_nRESET_GPIO->PDIR & PIN_nRESET) ? 0 : 1;
+#else
+    return 0;
+#endif
 }
 
 uint8_t gpio_get_reset_btn_fwrd(void)

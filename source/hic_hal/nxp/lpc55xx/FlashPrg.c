@@ -37,7 +37,12 @@ uint32_t Init(uint32_t adr, uint32_t clk, uint32_t fnc)
     /* Clear the WDOGEN bit to disable the watchdog */
     WDOG->STCTRLH &= ~WDOG_STCTRLH_WDOGEN_MASK;
 #else
+#ifdef LPC55_FIXME
+    /* FIXME: Commenting out next line which seems to disable the watchdog?
+      source/hic_hal/freescale/kl26z/MKL26Z4/system_MKL26Z4.c:SystemInit.c
+    */
     SIM->COPC = 0x00u;
+#endif
 #endif
     cortex_int_restore(state);
 

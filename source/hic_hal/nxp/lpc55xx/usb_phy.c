@@ -46,6 +46,7 @@
 uint32_t USB_EhciPhyInit(uint8_t controllerId, uint32_t freq)
 {
 #if ((defined FSL_FEATURE_SOC_USBPHY_COUNT) && (FSL_FEATURE_SOC_USBPHY_COUNT > 0U))
+#ifdef LPC55_FIXME
     USBPHY->TRIM_OVERRIDE_EN = 0x001fU;               /* override IFR value */
     USBPHY->CTRL &= ~USBPHY_CTRL_SFTRST_MASK;         /* release PHY from reset */
     USBPHY->PLL_SIC |= USBPHY_PLL_SIC_PLL_POWER_MASK; /* power up PLL */
@@ -81,6 +82,7 @@ uint32_t USB_EhciPhyInit(uint8_t controllerId, uint32_t freq)
     /* Decode to trim the nominal 17.78mA current source for the High Speed TX drivers on USB_DP and USB_DM. */
     USBPHY->TX = ((USBPHY->TX & (~USBPHY_TX_D_CAL_MASK)) | USBPHY_TX_D_CAL(0xcU));
 #endif
+#endif
 
     return kStatus_USB_Success;
 }
@@ -100,6 +102,7 @@ uint32_t USB_EhciPhyInit(uint8_t controllerId, uint32_t freq)
 uint32_t USB_EhciLowPowerPhyInit(uint8_t controllerId, uint32_t freq)
 {
 #if ((defined FSL_FEATURE_SOC_USBPHY_COUNT) && (FSL_FEATURE_SOC_USBPHY_COUNT > 0U))
+#ifdef LPC55_FIXME
     USBPHY->TRIM_OVERRIDE_EN = 0x001fU;               /* override IFR value */
     USBPHY->CTRL &= ~USBPHY_CTRL_SFTRST_MASK;         /* release PHY from reset */
     USBPHY->PLL_SIC |= USBPHY_PLL_SIC_PLL_POWER_MASK; /* power up PLL */
@@ -149,6 +152,7 @@ uint32_t USB_EhciLowPowerPhyInit(uint8_t controllerId, uint32_t freq)
     /* Decode to trim the nominal 17.78mA current source for the High Speed TX drivers on USB_DP and USB_DM. */
     USBPHY->TX = ((USBPHY->TX & (~USBPHY_TX_D_CAL_MASK)) | USBPHY_TX_D_CAL(0xcU));
 #endif
+#endif
 
     return kStatus_USB_Success;
 }
@@ -163,9 +167,11 @@ uint32_t USB_EhciLowPowerPhyInit(uint8_t controllerId, uint32_t freq)
 void USB_EhciPhyDeinit(uint8_t controllerId)
 {
 #if ((defined FSL_FEATURE_SOC_USBPHY_COUNT) && (FSL_FEATURE_SOC_USBPHY_COUNT > 0U))
+#ifdef LPC55_FIXME
     USBPHY->PLL_SIC &= ~USBPHY_PLL_SIC_PLL_POWER_MASK;       /* power down PLL */
     USBPHY->PLL_SIC &= ~USBPHY_PLL_SIC_PLL_EN_USB_CLKS_MASK; /* disable USB clock output from USB PHY PLL */
     USBPHY->CTRL |= USBPHY_CTRL_CLKGATE_MASK;                /* set to 1U to gate clocks */
+#endif
 #endif
 }
 
@@ -182,6 +188,7 @@ void USB_EhciPhyDeinit(uint8_t controllerId)
 void USB_EhcihostPhyDisconnectDetectCmd(uint8_t controllerId, uint8_t enable)
 {
 #if ((defined FSL_FEATURE_SOC_USBPHY_COUNT) && (FSL_FEATURE_SOC_USBPHY_COUNT > 0U))
+#ifdef LPC55_FIXME
     if (enable)
     {
         USBPHY->CTRL |= USBPHY_CTRL_ENHOSTDISCONDETECT_MASK;
@@ -190,5 +197,6 @@ void USB_EhcihostPhyDisconnectDetectCmd(uint8_t controllerId, uint8_t enable)
     {
         USBPHY->CTRL &= (~USBPHY_CTRL_ENHOSTDISCONDETECT_MASK);
     }
+#endif
 #endif
 }
