@@ -21,10 +21,10 @@
 
     .section .isr_vector, "a"
     .align 2
-    .globl __Vectors
+    .globl __isr_vector
 
-__Vectors:
-    .long    Image$$ARM_LIB_STACK$$ZI$$Limit                /* Top of Stack */
+__isr_vector:
+    .long    __StackTop                                      /* Top of Stack */
     .long    Reset_Handler                                   /* Reset Handler */
     .long    NMI_Handler                                     /* NMI Handler*/
     .long    HardFault_Handler                               /* Hard Fault Handler*/
@@ -102,7 +102,7 @@ __Vectors:
     .long    PQ_IRQHandler                              /* PQ interrupt */
     .long    DMA1_IRQHandler                              /* DMA1 interrupt */
     .long    FLEXCOMM8_IRQHandler                              /* Flexcomm Interface 8 (SPI, , FLEXCOMM) */
-    .size    __Vectors, . - __Vectors
+    .size    __isr_vector, . - __isr_vector
 
     .text
     .thumb
@@ -115,14 +115,106 @@ __Vectors:
     .type    Reset_Handler, %function
 
 Reset_Handler:
-    cpsid   i               /* mask interrupts */
-    ldr   r0, =Image$$ARM_LIB_STACK$$ZI$$Base
+    ldr   r0, =__StackLimit
     msr   msplim, r0
+#ifndef __NO_SYSTEM_INIT
     ldr   r0,=SystemInit
     blx   r0
+#endif
+/*     Loop to copy data from read only memory to RAM. The ranges
+ *      of copy from/to are specified by following symbols evaluated in
+ *      linker script.
+ *      __etext: End of code section, i.e., begin of data sections to copy from.
+ *      __data_start__/__data_end__: RAM address range that data should be
+ *      copied to. Both must be aligned to 4 bytes boundary.  */
+
+    ldr    r1, =__etext
+    ldr    r2, =__data_start__
+    ldr    r3, =__data_end__
+
+#if 1
+/* Here are two copies of loop implemenations. First one favors code size
+ * and the second one favors performance. Default uses the first one.
+ * Change to "#if 0" to use the second one */
+.LC0:
+    cmp     r2, r3
+    ittt    lt
+    ldrlt   r0, [r1], #4
+    strlt   r0, [r2], #4
+    blt    .LC0
+#else
+    subs    r3, r2
+    ble    .LC1
+.LC0:
+    subs    r3, #4
+    ldr    r0, [r1, r3]
+    str    r0, [r2, r3]
+    bgt    .LC0
+.LC1:
+#endif
+
+#ifdef __STARTUP_CLEAR_BSS
+/*     This part of work usually is done in C library startup code. Otherwise,
+ *     define this macro to enable it in this startup.
+ *
+ *     Loop to zero out BSS section, which uses following symbols
+ *     in linker script:
+ *      __bss_start__: start of BSS section. Must align to 4
+ *      __bss_end__: end of BSS section. Must align to 4
+ */
+    ldr r1, =__bss_start__
+    ldr r2, =__bss_end__
+
+    movs    r0, 0
+.LC2:
+    cmp     r1, r2
+    itt    lt
+    strlt   r0, [r1], #4
+    blt    .LC2
+#endif /* __STARTUP_CLEAR_BSS */
+
+/* Add stack / heap initializaiton */
+    movs    r0, 0
+    ldr     r1, =__HeapBase
+    ldr     r2, =__HeapLimit
+.LC3:
+    cmp     r1, r2
+    itt     lt
+    strlt   r0, [r1], #4
+    blt     .LC3
+
+    ldr     r1, =__StackLimit
+    ldr     r2, =__StackTop
+.LC4:
+    cmp     r1, r2
+    itt     lt
+    strlt   r0, [r1], #4
+    blt     .LC4
+/*End of stack / heap initializaiton */
     cpsie   i               /* Unmask interrupts */
-    ldr   r0,=__main
+
+#ifndef __START
+#define __START _start
+#endif
+#ifndef __ATOLLIC__
+    ldr   r0,=__START
+    blx   r0
+#else
+    ldr   r0,=__libc_init_array
+    blx   r0
+    ldr   r0,=main
     bx    r0
+#endif
+
+// Alternate init code from DFP:
+//     cpsid   i               /* mask interrupts */
+//     ldr   r0, =__StackLimit
+//     msr   msplim, r0
+//     ldr   r0,=SystemInit
+//     blx   r0
+//     cpsie   i               /* Unmask interrupts */
+//     ldr   r0,=__main
+//     bx    r0
 
     .pool
     .size Reset_Handler, . - Reset_Handler

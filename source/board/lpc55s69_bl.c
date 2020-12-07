@@ -3,7 +3,7 @@
  * @brief   board ID and meta-data for the hardware interface circuit (HIC) based on the NXP LPC55S69
  *
  * DAPLink Interface Firmware
- * Copyright (c) 2019, ARM Limited, All Rights Reserved
+ * Copyright (c) 2019-2020, Arm Limited, All Rights Reserved
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -26,7 +26,7 @@
 #include "target_family.h"
 
 // Warning - changing the interface start will break backwards compatibility
-COMPILER_ASSERT(DAPLINK_ROM_IF_START == KB(64));
+COMPILER_ASSERT(DAPLINK_ROM_IF_START == (DAPLINK_ROM_START + KB(64)));
 
 /**
 * List of start and size for each size of flash sector
@@ -46,8 +46,8 @@ target_cfg_t target_device = {
     .flash_regions[0].start     = DAPLINK_ROM_IF_START,
     .flash_regions[0].end       = DAPLINK_ROM_IF_START + DAPLINK_ROM_IF_SIZE,
     .flash_regions[0].flags     = kRegionIsDefault,
-    .ram_regions[0].start       = 0x20000000,
-    .ram_regions[0].end         = 0x20044000,
+    .ram_regions[0].start       = 0x30000000,
+    .ram_regions[0].end         = 0x30040000,
     /* .flash_algo not needed for bootloader */
 };
 
@@ -55,7 +55,7 @@ target_cfg_t target_device = {
 const target_family_descriptor_t *g_target_family = NULL;
 
 const board_info_t g_board_info = {
-    .infoVersion = 0x0,
+    .info_version = kBoardInfoVersion,
     .board_id = "0000",
     .daplink_url_name =   "HELP_FAQHTM",
     .daplink_drive_name = "BOOTLOADER",
