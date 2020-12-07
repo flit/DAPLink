@@ -3,7 +3,7 @@
  * @brief
  *
  * DAPLink Interface Firmware
- * Copyright (c) 2009-2016, ARM Limited, All Rights Reserved
+ * Copyright (c) 2020 Arm Limited, All Rights Reserved
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -19,20 +19,13 @@
  * limitations under the License.
  */
 
-#include "fsl_device_registers.h"
 #include "read_uid.h"
+#include "fsl_iap_ffr.h"
 
 void read_unique_id(uint32_t *id)
 {
-#ifdef LPC55_FIXME
-    id[0] = SIM->UIDL;
-    id[1] = SIM->UIDML;
-    id[2] = SIM->UIDMH;
-    id[3] = SIM->UIDH;
-#else
-    id[0] = 0;
-    id[1] = 0;
-    id[2] = 0;
-    id[3] = 0;
-#endif
+    flash_config_t flash_config;
+    FLASH_Init(&flash_config);
+    FFR_Init(&flash_config);
+    FFR_GetUUID(&flash_config, (uint8_t *)&id);
 }
