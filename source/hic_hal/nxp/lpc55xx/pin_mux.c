@@ -112,7 +112,7 @@ void USART3_InitPins(void)
     IOCON_PinMuxSet(IOCON, 0U, 3U, port0_pin3_config);
 }
 
-void USART0_DeinitPins(void)
+void USART3_DeinitPins(void)
 {
     /* Enables the clock for the I/O controller.: Enable Clock. */
     CLOCK_EnableClock(kCLOCK_Iocon);
