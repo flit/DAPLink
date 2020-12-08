@@ -14,7 +14,6 @@ common:
         - source/hic_hal/nxp/lpc55xx
         - source/hic_hal/nxp/lpc55xx/LPC55S69
         - source/hic_hal/nxp/lpc55xx/LPC55S69/drivers
-        - projectfiles/uvision/lpc55xx_bl/build
     sources:
         hic_hal:
             - source/hic_hal/nxp/lpc55xx
@@ -33,6 +32,8 @@ tool_specific:
                 - --no_unaligned_access
             asm_flags:
                 - --no_unaligned_access
+        includes:
+            - projectfiles/uvision/lpc55xx_bl/build
         sources:
             hic_hal:
                 - source/hic_hal/nxp/lpc55xx/armcc
