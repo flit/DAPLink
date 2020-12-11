@@ -294,22 +294,22 @@ void info_crc_compute()
     // Compute the CRCs of regions that exist
     if ((DAPLINK_ROM_BL_SIZE > 0)
             && flash_is_readable(DAPLINK_ROM_BL_START, DAPLINK_ROM_BL_SIZE - 4)) {
-        crc_bootloader = crc32((void *)DAPLINK_ROM_BL_START, DAPLINK_ROM_BL_SIZE - 4);
+        crc_bootloader = 0; //crc32((void *)DAPLINK_ROM_BL_START, DAPLINK_ROM_BL_SIZE - 4);
     }
 
     if ((DAPLINK_ROM_IF_SIZE > 0)
             && flash_is_readable(DAPLINK_ROM_IF_START, DAPLINK_ROM_IF_SIZE - 4)) {
-        crc_interface = crc32((void *)DAPLINK_ROM_IF_START, DAPLINK_ROM_IF_SIZE - 4);
+        crc_interface = 0; //crc32((void *)DAPLINK_ROM_IF_START, DAPLINK_ROM_IF_SIZE - 4);
     }
 
     if ((DAPLINK_ROM_CONFIG_ADMIN_SIZE > 0)
             && flash_is_readable(DAPLINK_ROM_CONFIG_ADMIN_START, DAPLINK_ROM_CONFIG_ADMIN_SIZE)) {
-        crc_config_admin = crc32((void *)DAPLINK_ROM_CONFIG_ADMIN_START, DAPLINK_ROM_CONFIG_ADMIN_SIZE);
+        crc_config_admin = 0; //crc32((void *)DAPLINK_ROM_CONFIG_ADMIN_START, DAPLINK_ROM_CONFIG_ADMIN_SIZE);
     }
 
     if ((DAPLINK_ROM_CONFIG_USER_SIZE > 0)
             && flash_is_readable(DAPLINK_ROM_CONFIG_USER_START, DAPLINK_ROM_CONFIG_USER_SIZE)) {
-        crc_config_user = crc32((void *)DAPLINK_ROM_CONFIG_USER_START, DAPLINK_ROM_CONFIG_USER_SIZE);
+        crc_config_user = 0; //crc32((void *)DAPLINK_ROM_CONFIG_USER_START, DAPLINK_ROM_CONFIG_USER_SIZE);
     }
 }
 
