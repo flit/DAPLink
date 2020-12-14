@@ -10,7 +10,6 @@ common:
         - OS_CLOCK=96000000
     includes:
         - source/hic_hal/atmel/sam3u2c
-        - projectfiles/uvision/sam3u2c_bl/build
     sources:
         hic_hal:
             - source/hic_hal/atmel/sam3u2c
@@ -20,17 +19,23 @@ tool_specific:
         misc:
             ld_flags:
                 - --predefine="-I..\..\..\source\hic_hal\atmel\sam3u2c"
+        includes:
+            - projectfiles/uvision/sam3u2c_bl/build
         sources:
             hic_hal:
                 - source/hic_hal/atmel/sam3u2c/armcc
-    make_armcc:
+    armcc:
         misc:
             ld_flags:
                 - --predefine="-Isource\hic_hal\atmel\sam3u2c"
         sources:
             hic_hal:
                 - source/hic_hal/atmel/sam3u2c/armcc
-    make_gcc_arm:
+    armclang:
+        sources:
+            hic_hal:
+                - source/hic_hal/atmel/sam3u2c/armcc
+    gcc_arm:
         includes:
             - source/hic_hal/atmel/sam3u2c/gcc
         sources:

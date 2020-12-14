@@ -24,10 +24,14 @@ tool_specific:
         sources:
             rtos:
                 - source/rtos/RTX/Source/ARM/irq_cm3.s
-    make_armcc:
+    armcc:
         sources:
             rtos:
                 - source/rtos/RTX/Source/ARM/irq_cm3.s
-    make_gcc_arm:
+    armclang:
+        sources:
+            rtos:
+                - source/rtos/RTX/Source/ARM/irq_cm3.s
+    gcc_arm:
         sources:
                 - source/rtos/RTX/Source/GCC/irq_cm3.S
