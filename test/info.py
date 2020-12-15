@@ -138,6 +138,7 @@ PROJECT_RELEASE_INFO = {
     ('max32625_if',                                 False,      0x0000,     "bin"       ),
     ('sam3u2c_if',                                  False,      0x0000,     "bin"       ),
     ('stm32f103xb_if',                              False,      0x0000,     "bin"       ),
+    ('lpc55s69_if',                                 False,      0x10000,    "bin"       ),
 }
 
 # Add new HICs here
@@ -310,6 +311,7 @@ HIC_STRING_TO_ID = {
     'stm32f103xb': 0x97969908,
     'k26f': 0x97969909,
     'm48ssidae': 0x97969921,
+    'lpc55s69': 0x4C504355,
 }
 
 BOARD_ID_LOCKED_WHEN_ERASED = set([
