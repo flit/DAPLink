@@ -1,0 +1,34 @@
+common:
+    macros:
+        - OS_TICK=10000
+    includes:
+        - source/rtos/Include/
+        - source/rtos/RTX/Include/
+    sources:
+        rtos:
+            - source/rtos/RTX/Config/RTX_Config.c
+            - source/rtos/RTX/Source/rtx_delay.c
+            - source/rtos/RTX/Source/rtx_kernel.c
+            - source/rtos/RTX/Source/rtx_lib.c
+            - source/rtos/RTX/Source/rtx_memory.c
+            - source/rtos/RTX/Source/rtx_mempool.c
+            - source/rtos/RTX/Source/rtx_msgqueue.c
+            - source/rtos/RTX/Source/rtx_mutex.c
+            - source/rtos/RTX/Source/rtx_system.c
+            - source/rtos/RTX/Source/rtx_thread.c
+            - source/rtos/RTX/Source/rtx_timer.c
+            - source/rtos/Source/os_systick.c
+
+# Note: For armcc, do not use NS version! We don't want the TZ context support.
+tool_specific:
+    uvision:
+        sources:
+            rtos:
+                - source/rtos/RTX/Source/ARM/irq_armv8mml.s
+    make_armcc:
+        sources:
+            rtos:
+                - source/rtos/RTX/Source/ARM/irq_armv8mml.s
+    make_gcc_arm:
+        sources:
+                - source/rtos/RTX/Source/GCC/irq_armv8mml.S
