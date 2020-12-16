@@ -216,8 +216,6 @@ void main_task(void * arg)
 
     // Initialize settings - required for asserts to work
     config_init();
-    // Update bootloader if it is out of date
-    bootloader_check_and_update();
     // leds
     gpio_init();
     // Turn to LED default settings
@@ -254,6 +252,8 @@ void main_task(void * arg)
 
     // Update versions and IDs
     info_init();
+    // Update bootloader if it is out of date
+    bootloader_check_and_update();
     // USB
     usbd_init();
 #ifdef DRAG_N_DROP_SUPPORT
