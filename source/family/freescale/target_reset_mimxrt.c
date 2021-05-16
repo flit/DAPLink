@@ -23,6 +23,7 @@
 #include "info.h"
 #include "target_family.h"
 #include "cmsis_os2.h"
+#include "target_config.h"
 
 static void target_before_init_debug(void)
 {
@@ -47,7 +48,6 @@ static void prerun_target_config(void)
 
 static uint8_t validate_bin_nvic(const uint8_t *buf)
 {
-    #include "target_config.h"
     extern target_cfg_t target_device ;
 
     if(buf[0] == 'F' && buf[1] == 'C' && buf[2] == 'F' && buf[3] == 'B')
